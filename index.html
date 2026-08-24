@@ -217,7 +217,6 @@
         .btn-step.predict-btn { border-color: #eab308; color: #eab308; }
         .btn-step.predict-btn.active { background: #eab308; color: #0f172a; }
 
-        /* 分享提示 Toast */
         #share-toast {
             position: absolute;
             top: 70px;
@@ -243,7 +242,7 @@
 
     <div class="header">
         <h1 id="ui-title">全球板塊構造動力學與海嘯擴散平台</h1>
-        <p id="ui-subtitle">3D 震源深度立體光柱 · 深度連結分享 · 多維時序回放 · 海嘯傳播模擬</p>
+        <p id="ui-subtitle">3D 震源深度立體光柱 · 點擊紅點特寫放大 · 多維時序回放 · 海嘯傳播模擬</p>
         <div class="sync-badge" id="sync-status">USGS API 連線同步中...</div>
     </div>
 
@@ -296,11 +295,10 @@
     <script>
         const API_POLL_INTERVAL = 300000;
 
-        // 多國語言字典
         const i18nDict = {
             "zh-TW": {
                 title: "全球板塊構造動力學與海嘯擴散平台",
-                subtitle: "3D 震源深度立體光柱 · 深度連結分享 · 多維時序回放 · 海嘯傳播模擬",
+                subtitle: "3D 震源深度立體光柱 · 點擊紅點特寫放大 · 多維時序回放 · 海嘯傳播模擬",
                 syncing: "USGS API 連線同步中...",
                 synced: "已同步 USGS 即時數據",
                 btnNebula: "應力星雲",
@@ -323,7 +321,7 @@
             },
             "en": {
                 title: "Global Tectonic Dynamics & Real-time Monitoring",
-                subtitle: "3D Focal Depth Pillars · Deep Linking · Time-lapse · Tsunami Simulation",
+                subtitle: "3D Focal Depth Pillars · Click to Zoom · Time-lapse · Tsunami Simulation",
                 syncing: "Syncing USGS API...",
                 synced: "USGS Real-time Synced",
                 btnNebula: "Stress Nebula",
@@ -346,7 +344,7 @@
             },
             "ja": {
                 title: "全球プレートダイナミクス・リアルタイム地震監視",
-                subtitle: "3D震源深度ピラー · 共有リンク · 時系列再生 · 津波シミュレーション",
+                subtitle: "3D震源深度ピラー · クリックズーム · 時系列再生 · 津波シミュレーション",
                 syncing: "USGS API 同期中...",
                 synced: "USGS リアルタイム同期完了",
                 btnNebula: "応力星雲",
@@ -452,17 +450,26 @@
         const RADIUS = 100;
         let scene, camera, renderer, controls, globeGroup;
         let markerObjects = [];
+        let clickableHitTargets = []; // 專門用於 Raycaster 精準點擊拾取的隱形碰撞球
         let tsunamiWaveRings = [];
         let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
         let wireframeMesh;
         let currentIndex = 0;
         let globalClock = 0;
 
+        // 相機平滑插值與縮放推進目標 (Fly-to Target)
+        let targetCameraDist = 280;
+        let targetRotationY = 0;
+        let targetRotationX = 0;
+
         let showNebula = true;
         let showTsunami = true;
         let showSection = true;
         let isTimelinePlaying = false;
         let timelineTimer = null;
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
         const container = document.getElementById('webgl-container');
         const dialogCard = document.getElementById('dialog-card');
@@ -479,14 +486,13 @@
             );
         }
 
-        // 依深度取得專業色彩配置
         function getDepthVisuals(depth) {
             if (depth < 70) {
-                return { color: 0xef4444, hex: "#ef4444", text: lang.shallow }; // 淺層紅
+                return { color: 0xef4444, hex: "#ef4444", text: lang.shallow };
             } else if (depth <= 300) {
-                return { color: 0x06b6d4, hex: "#06b6d4", text: lang.intermediate }; // 中層青
+                return { color: 0x06b6d4, hex: "#06b6d4", text: lang.intermediate };
             } else {
-                return { color: 0xa855f7, hex: "#a855f7", text: lang.deep }; // 深層紫
+                return { color: 0xa855f7, hex: "#a855f7", text: lang.deep };
             }
         }
 
@@ -603,11 +609,11 @@
             setInterval(refreshUSGSData, API_POLL_INTERVAL);
 
             setupUIEventListeners();
+            setupRaycasterListeners(); // 啟用 3D 滑鼠點擊拾取與特寫放大
+
             window.addEventListener('resize', onWindowResize);
-            
             filterEventsByTimeline(100);
 
-            // 解析 URL 深度參數進行初始定位
             handleDeepLinkRouting();
             animate();
         }
@@ -774,12 +780,14 @@
                 globeGroup.remove(m.ring1);
                 globeGroup.remove(m.ring2);
                 globeGroup.remove(m.sprite);
+                if (m.hitSphere) globeGroup.remove(m.hitSphere);
                 if (m.pillar) globeGroup.remove(m.pillar);
 
                 disposeObject(m.dot);
                 disposeObject(m.ring1);
                 disposeObject(m.ring2);
                 disposeObject(m.sprite);
+                if (m.hitSphere) disposeObject(m.hitSphere);
                 if (m.pillar) disposeObject(m.pillar);
             });
 
@@ -789,26 +797,22 @@
             });
 
             markerObjects = [];
+            clickableHitTargets = [];
             tsunamiWaveRings = [];
 
-            activeEvents.forEach((eq) => {
+            activeEvents.forEach((eq, idx) => {
                 const isPredict = eq.type === 'predict';
                 const depthInfo = getDepthVisuals(eq.depth);
                 const color = isPredict ? 0xeab308 : depthInfo.color;
 
                 const posSurface = latLngToVector3(eq.lat, eq.lng, RADIUS + 0.8);
 
-                // 1. 震源立體深度光柱 (Focal Depth Pillar: 從地表垂直深入內部)
-                const depthScale = Math.min(eq.depth / 20, 18); // 深度縮放
+                // 1. 深度立體光柱
+                const depthScale = Math.min(eq.depth / 20, 18);
                 const posDepth = latLngToVector3(eq.lat, eq.lng, RADIUS - depthScale);
 
                 const pillarGeo = new THREE.BufferGeometry().setFromPoints([posSurface, posDepth]);
-                const pillarMat = new THREE.LineBasicMaterial({
-                    color: color,
-                    transparent: true,
-                    opacity: 0.7,
-                    linewidth: 2
-                });
+                const pillarMat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.7, linewidth: 2 });
                 const pillarMesh = new THREE.Line(pillarGeo, pillarMat);
                 globeGroup.add(pillarMesh);
 
@@ -835,12 +839,21 @@
                 const textPos = latLngToVector3(eq.lat, eq.lng, RADIUS + 4.2);
                 sprite.position.copy(textPos);
 
+                // 5. 【關鍵】：隱形射線拾取球 (Hit Sphere) 擴大點擊感應範圍
+                const hitGeo = new THREE.SphereGeometry(3.6, 8, 8);
+                const hitMat = new THREE.MeshBasicMaterial({ visible: false }); // 隱形但可感應用
+                const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+                hitMesh.position.copy(posSurface);
+                hitMesh.userData = { eventIndex: idx };
+                globeGroup.add(hitMesh);
+                clickableHitTargets.push(hitMesh);
+
                 globeGroup.add(dotMesh);
                 globeGroup.add(ringMesh1);
                 globeGroup.add(ringMesh2);
                 globeGroup.add(sprite);
 
-                // 5. 海嘯波前傳播模擬
+                // 6. 海嘯波前模擬
                 const numMag = parseFloat(eq.mag.replace(/[^0-9.]/g, ''));
                 if (eq.isOceanic && numMag >= 7.0 && eq.depth < 70) {
                     for (let w = 0; w < 3; w++) {
@@ -863,6 +876,7 @@
 
                 markerObjects.push({
                     dot: dotMesh,
+                    hitSphere: hitMesh,
                     pillar: pillarMesh,
                     ring1: ringMesh1,
                     ring2: ringMesh2,
@@ -882,7 +896,7 @@
                 btn.id = `btn-step-${idx}`;
                 const shortName = eq.location.split(',')[0].split(' of ')[1] || eq.location.split(' ')[0];
                 btn.innerText = `${idx + 1}. ${eq.type === 'predict' ? lang.predictPrefix : ''}${shortName}`;
-                btn.onclick = () => { focusEvent(idx, true); };
+                btn.onclick = () => { focusEvent(idx, true, true); };
                 bar.appendChild(btn);
             });
         }
@@ -966,20 +980,29 @@
                 `${data.location} | ${lang.depthLabel} ${data.depth} km (${depthInfo.text})`;
         }
 
-        // ==========================================
-        // 核心亮點：事件聚焦與網址參數同步 (Deep Linking)
-        // ==========================================
-        function focusEvent(index, updateUrl = true) {
+        // ==========================================================
+        // 核心升級：事件聚焦 + 自動放大特寫 (Fly-to & Zoom In)
+        // ==========================================================
+        function focusEvent(index, updateUrl = true, shouldZoom = true) {
             if (!markerObjects[index]) return;
             currentIndex = index;
             const target = markerObjects[index];
 
             document.querySelectorAll('.btn-step').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-step-${index}`);
-            if (activeBtn) activeBtn.classList.add('active');
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
 
+            // 旋轉地球對準震央
             targetRotationY = -target.data.lng * (Math.PI / 180) - (Math.PI / 2);
             targetRotationX = target.data.lat * (Math.PI / 180);
+
+            // 點擊特寫放大推進鏡頭 (Camera Zoom In: 推進至 175)
+            if (shouldZoom) {
+                targetCameraDist = 175;
+            }
 
             const badge = document.getElementById('c-badge');
             if (target.data.type === 'predict') {
@@ -999,7 +1022,6 @@
                 tsunamiBadge.style.display = 'none';
             }
 
-            // 震源深度標籤分級
             const depthBadge = document.getElementById('c-depth-badge');
             const depthInfo = getDepthVisuals(target.data.depth);
             depthBadge.innerText = depthInfo.text;
@@ -1016,7 +1038,6 @@
 
             drawCrossSection(target.data);
 
-            // 同步更新網址參數，方便分享
             if (updateUrl && target.data.id) {
                 const newUrl = new URL(window.location);
                 newUrl.searchParams.set('id', target.data.id);
@@ -1024,7 +1045,57 @@
             }
         }
 
-        // 解析網址參數進行路由跳轉
+        // ==========================================================
+        // 核心升級：3D 光線投射拾取事件 (Raycaster Click / Pointer)
+        // ==========================================================
+        function setupRaycasterListeners() {
+            let pointerDownTime = 0;
+            let startX = 0, startY = 0;
+
+            window.addEventListener('pointerdown', (e) => {
+                pointerDownTime = Date.now();
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            // 滑鼠懸停變化為手指游標
+            window.addEventListener('pointermove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(clickableHitTargets);
+
+                if (intersects.length > 0) {
+                    document.body.style.cursor = 'pointer';
+                } else {
+                    document.body.style.cursor = 'default';
+                }
+            });
+
+            // 點擊觸發飛越與放大
+            window.addEventListener('pointerup', (e) => {
+                const clickDuration = Date.now() - pointerDownTime;
+                const distMoved = Math.hypot(e.clientX - startX, e.clientY - startY);
+
+                // 防止拖曳旋轉地球時誤觸發點擊 (限制在短暫點擊且移動距離 < 6px)
+                if (clickDuration < 300 && distMoved < 6) {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(clickableHitTargets);
+
+                    if (intersects.length > 0) {
+                        const targetEventIdx = intersects[0].object.userData.eventIndex;
+                        if (targetEventIdx !== undefined) {
+                            focusEvent(targetEventIdx, true, true);
+                        }
+                    }
+                }
+            });
+        }
+
         function handleDeepLinkRouting() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetId = urlParams.get('id');
@@ -1035,9 +1106,7 @@
                 const foundIdx = allEarthquakeData.findIndex(e => e.id === targetId);
                 if (foundIdx !== -1) {
                     setTimeout(() => {
-                        const targetBtn = document.getElementById(`btn-step-${foundIdx}`);
-                        if (targetBtn) targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-                        focusEvent(foundIdx, false);
+                        focusEvent(foundIdx, false, true);
                     }, 600);
                     return;
                 }
@@ -1048,7 +1117,6 @@
                 return;
             }
 
-            // 預設定位至本地時區
             autoLocateUserTimezone();
         }
 
@@ -1089,7 +1157,6 @@
                 }
             };
 
-            // 一鍵複製分享連結
             document.getElementById('btn-share-link').onclick = () => {
                 navigator.clipboard.writeText(window.location.href).then(() => {
                     const toast = document.getElementById('share-toast');
@@ -1125,9 +1192,6 @@
             clearInterval(timelineTimer);
         }
 
-        let targetRotationY = 0;
-        let targetRotationX = 0;
-
         function updateDialogPosition() {
             if (markerObjects.length === 0 || !markerObjects[currentIndex]) return;
             const currentMarker = markerObjects[currentIndex];
@@ -1136,6 +1200,7 @@
             const x = (screenPos.x * .5 + .5) * window.innerWidth;
             const y = (-(screenPos.y * .5) + .5) * window.innerHeight;
 
+            // 背面剔除：當紅點轉到地球背面時自動隱藏資訊卡
             if (screenPos.z < 0.98) {
                 dialogCard.style.display = 'block';
                 dialogCard.style.left = `${x - 160}px`;
@@ -1155,8 +1220,12 @@
             requestAnimationFrame(animate);
             globalClock += 0.03;
 
-            globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.04;
-            globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.04;
+            // 地球平滑轉動至目標經緯度
+            globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.05;
+            globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.05;
+
+            // 相機推進特寫平滑插值 (Smooth Camera Zoom)
+            camera.position.z += (targetCameraDist - camera.position.z) * 0.05;
 
             markerObjects.forEach(m => {
                 m.scale1 += 0.01;
@@ -1246,11 +1315,7 @@
             });
 
             setTimeout(() => {
-                const targetBtn = document.getElementById(`btn-step-${closestIdx}`);
-                if (targetBtn) {
-                    targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                    focusEvent(closestIdx, false);
-                }
+                focusEvent(closestIdx, false, false);
             }, 800);
         }
 
