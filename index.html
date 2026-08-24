@@ -994,7 +994,67 @@
             updateDialogPosition();
             renderer.render(scene, camera);
         }
+// 常用時區預設經緯度對照表
+        const timezoneCoordsMap = {
+            "Asia/Taipei": { lat: 23.69, lng: 120.96 },
+            "Asia/Tokyo": { lat: 35.68, lng: 139.76 },
+            "Asia/Shanghai": { lat: 31.23, lng: 121.47 },
+            "America/New_York": { lat: 40.71, lng: -74.00 },
+            "America/Los_Angeles": { lat: 34.05, lng: -118.24 },
+            "Europe/London": { lat: 51.50, lng: -0.12 },
+            "Australia/Sydney": { lat: -33.86, lng: 151.20 }
+        };
 
+        // 自動定位並旋轉地球視角
+        function autoLocateUserTimezone() {
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            let targetLat = 23.69;
+            let targetLng = 120.96;
+
+            if (timezoneCoordsMap[userTimezone]) {
+                targetLat = timezoneCoordsMap[userTimezone].lat;
+                targetLng = timezoneCoordsMap[userTimezone].lng;
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        focusOnCoordinates(pos.coords.latitude, pos.coords.longitude);
+                    },
+                    () => {
+                        focusOnCoordinates(targetLat, targetLng);
+                    },
+                    { timeout: 3000 }
+                );
+            } else {
+                focusOnCoordinates(targetLat, targetLng);
+            }
+        }
+
+        // 平滑轉向指定經緯度並捲動按鈕
+        function focusOnCoordinates(lat, lng) {
+            targetRotationY = -lng * (Math.PI / 180) - (Math.PI / 2);
+            targetRotationX = lat * (Math.PI / 180);
+
+            let closestIdx = 0;
+            let minDistance = Infinity;
+
+            allEarthquakeData.forEach((eq, idx) => {
+                const d = Math.hypot(eq.lat - lat, eq.lng - lng);
+                if (d < minDistance) {
+                    minDistance = d;
+                    closestIdx = idx;
+                }
+            });
+
+            setTimeout(() => {
+                const targetBtn = document.getElementById(`btn-step-${closestIdx}`);
+                if (targetBtn) {
+                    targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    focusEvent(closestIdx);
+                }
+            }, 800);
+        }
         init();
     </script>
 </body>
