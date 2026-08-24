@@ -44,6 +44,11 @@
             border-radius: 4px;
             border: 1px solid rgba(34, 197, 94, 0.3);
         }
+        .sync-badge.error {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.35);
+        }
 
         .view-controls {
             position: absolute;
@@ -190,6 +195,8 @@
         .timeline-slider {
             flex-grow: 1;
             -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
             height: 6px;
             border-radius: 3px;
             background: #334155;
@@ -204,6 +211,20 @@
             background: #38bdf8;
             box-shadow: 0 0 8px #38bdf8;
             cursor: pointer;
+        }
+        .timeline-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+            cursor: pointer;
+        }
+        .timeline-slider::-moz-range-track {
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
         }
         .events-btn-scroll {
             display: flex;
@@ -244,9 +265,46 @@
             animation: fadeIn 0.3s ease;
         }
         @keyframes fadeIn { from { opacity: 0; top: 60px; } to { opacity: 1; top: 70px; } }
+
+        #loading-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #020617;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            transition: opacity 0.5s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-spinner {
+            width: 42px;
+            height: 42px;
+            border: 3px solid rgba(56, 189, 248, 0.2);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-screen p {
+            font-size: 12px;
+            color: #94a3b8;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
+
+    <div id="loading-screen">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">初始化地球模型與即時資料中...</p>
+    </div>
 
     <div id="share-toast">已複製專屬分享網址到剪貼簿！</div>
 
@@ -331,6 +389,7 @@
                 subtitle: "USGS+EMSC 融合 · 板塊動態流 · 月球引力場 · 區域 Webcams",
                 syncing: "多元資料庫同步中...",
                 synced: "已同步 USGS + EMSC 雙源即時數據",
+                syncError: "連線異常，暫以快取資料顯示",
                 btnNebula: "應力星雲",
                 btnTsunami: "海嘯波前",
                 btnSection: "斷層剖面儀",
@@ -347,13 +406,15 @@
                 depthLabel: "深度",
                 shallow: "淺層 (<70km)",
                 intermediate: "中深層 (70-300km)",
-                deep: "超深層 (>300km)"
+                deep: "超深層 (>300km)",
+                loading: "初始化地球模型與即時資料中..."
             },
             "en": {
                 title: "Global Tectonic Dynamics & Real-time Monitoring",
                 subtitle: "USGS+EMSC Fusion · Tectonic Vectors · Lunar Stress · Webcams",
                 syncing: "Syncing Multi-Source API...",
                 synced: "USGS + EMSC Multi-Source Synced",
+                syncError: "Connection issue — showing cached data",
                 btnNebula: "Stress Nebula",
                 btnTsunami: "Tsunami Sim",
                 btnSection: "Cross-Section",
@@ -370,13 +431,15 @@
                 depthLabel: "Depth",
                 shallow: "Shallow (<70km)",
                 intermediate: "Intermediate (70-300km)",
-                deep: "Deep (>300km)"
+                deep: "Deep (>300km)",
+                loading: "Initializing globe & live data..."
             },
             "ja": {
                 title: "全球プレートダイナミクス・リアルタイム地震監視",
                 subtitle: "USGS+EMSC 同期 · プレートベクトル · 月引力応力 · Webcams",
                 syncing: "マルチソース同期中...",
                 synced: "USGS + EMSC リアルタイム同期完了",
+                syncError: "接続エラー、キャッシュデータを表示中",
                 btnNebula: "応力星雲",
                 btnTsunami: "津波波面",
                 btnSection: "断層断面図",
@@ -393,7 +456,8 @@
                 depthLabel: "深さ",
                 shallow: "浅発 (<70km)",
                 intermediate: "中発 (70-300km)",
-                deep: "深発 (>300km)"
+                deep: "深発 (>300km)",
+                loading: "地球モデルとデータを初期化中..."
             }
         };
 
@@ -413,9 +477,10 @@
             document.getElementById('ui-events-label').innerText = lang.eventsLabel;
             document.getElementById('lbl-timeline-date').innerText = lang.allTime;
             document.getElementById('share-toast').innerText = lang.toastShare;
+            document.getElementById('loading-text').innerText = lang.loading;
         }
 
-        let allEarthquakeData = [
+        AppState.data.earthquakes = [
             {
                 id: "p1", type: "predict",
                 source: "Fault Model",
@@ -514,30 +579,47 @@
 
         const RADIUS = 100;
         let scene, camera, renderer, controls, globeGroup;
-        let markerObjects = [];
-        let clickableHitTargets = [];
-        let tsunamiWaveRings = [];
-        let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
-        let wireframeMesh;
-        
-        let plateVelocityGroup;
-        let stressFieldGroup;
 
-        let currentIndex = 0;
-        let globalClock = 0;
-
-        let targetCameraDist = 280;
-        let targetRotationY = 0;
-        let targetRotationX = 0;
-
-        let showNebula = true;
-        let showTsunami = true;
-        let showSection = true;
-        let showPlates = true;
-        let showStress = true;
-
-        let isTimelinePlaying = false;
-        let timelineTimer = null;
+        // 全域狀態物件：集中管理原本散落各處的 mutable 變數，方便追蹤、除錯與未來擴充
+        const AppState = {
+            data: {
+                earthquakes: []
+            },
+            scene: {
+                markerObjects: [],
+                clickableHitTargets: [],
+                tsunamiWaveRings: [],
+                nebulaPointsMesh: null,
+                nebulaMaterial: null,
+                wireframeMesh: null,
+                plateVelocityGroup: null,
+                stressFieldGroup: null
+            },
+            view: {
+                currentIndex: 0,
+                targetCameraDist: 280,
+                targetRotationY: 0,
+                targetRotationX: 0,
+                clock: 0
+            },
+            toggles: {
+                nebula: true,
+                tsunami: true,
+                section: true,
+                plates: true,
+                stress: true
+            },
+            timeline: {
+                isPlaying: false,
+                timerId: null
+            },
+            polling: {
+                timerId: null
+            },
+            interaction: {
+                pendingHoverCheck: false
+            }
+        };
 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -555,6 +637,39 @@
                 radius * Math.cos(phi),
                 radius * Math.sin(phi) * Math.sin(theta)
             );
+        }
+
+        // 事件按鈕地名縮寫：分別處理 CJK（中日文）與拉丁字母地名，
+        // 避免 EMSC 的中文 flynn_region 或非 "X of Y" 格式的地名被錯誤截斷。
+        function getShortEventLabel(location) {
+            if (!location) return '';
+
+            // 去除 USGS 常見的距離方位前綴，例如 "12km SE of "
+            let cleaned = location.replace(/^\d+(\.\d+)?\s*km\s*[A-Z]*\s*of\s+/i, '');
+            // 取逗號（含全形逗號）前的第一段，去掉國家/地區後綴
+            cleaned = cleaned.split(',')[0].split('，')[0].trim();
+
+            if (!cleaned) return location.trim();
+
+            const isCJK = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7a3]/.test(cleaned);
+
+            if (isCJK) {
+                // 中日韓文字沒有空白分詞，直接以字元數截斷
+                const maxChars = 9;
+                return cleaned.length > maxChars ? cleaned.slice(0, maxChars) + '…' : cleaned;
+            }
+
+            // 拉丁字母地名：以完整單字為單位截斷，避免斷在字中間
+            const maxChars = 18;
+            if (cleaned.length <= maxChars) return cleaned;
+            const words = cleaned.split(' ');
+            let result = '';
+            for (const w of words) {
+                const next = (result ? result + ' ' + w : w);
+                if (next.length > maxChars) break;
+                result = next;
+            }
+            return (result || cleaned.slice(0, maxChars)) + '…';
         }
 
         function getDepthVisuals(depth) {
@@ -655,6 +770,9 @@
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            if ('outputEncoding' in renderer) {
+                renderer.outputEncoding = THREE.sRGBEncoding;
+            }
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -669,6 +787,9 @@
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             const bumpTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
+            if ('encoding' in earthTexture) {
+                earthTexture.encoding = THREE.sRGBEncoding;
+            }
 
             const earthGeo = new THREE.SphereGeometry(RADIUS, 64, 64);
             const earthMat = new THREE.MeshPhongMaterial({ 
@@ -683,8 +804,8 @@
 
             const wireframeGeo = new THREE.IcosahedronGeometry(RADIUS * 1.04, 3);
             const wireframeMat = new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.16 });
-            wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
-            globeGroup.add(wireframeMesh);
+            AppState.scene.wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
+            globeGroup.add(AppState.scene.wireframeMesh);
 
             const atmosphereGeo = new THREE.SphereGeometry(RADIUS * 1.015, 64, 64);
             const atmosphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.12, side: THREE.BackSide });
@@ -701,7 +822,15 @@
             buildStressFieldGroup();
 
             await refreshMultiSourceData();
-            setInterval(refreshMultiSourceData, API_POLL_INTERVAL);
+            schedulePolling();
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopPolling();
+                } else {
+                    schedulePolling();
+                    refreshMultiSourceData();
+                }
+            });
 
             setupUIEventListeners();
             setupRaycasterListeners();
@@ -710,7 +839,28 @@
             filterEventsByTimeline(100);
 
             handleDeepLinkRouting();
+            hideLoadingScreen();
             animate();
+        }
+
+        function hideLoadingScreen() {
+            const el = document.getElementById('loading-screen');
+            if (el) {
+                el.classList.add('hidden');
+                setTimeout(() => { el.style.display = 'none'; }, 550);
+            }
+        }
+
+        function schedulePolling() {
+            if (AppState.polling.timerId) return;
+            AppState.polling.timerId = setInterval(refreshMultiSourceData, API_POLL_INTERVAL);
+        }
+
+        function stopPolling() {
+            if (AppState.polling.timerId) {
+                clearInterval(AppState.polling.timerId);
+                AppState.polling.timerId = null;
+            }
         }
 
         function loadTectonicPlates() {
@@ -729,12 +879,15 @@
                         globeGroup.add(line);
                     });
                 })
-                .catch(err => console.log('Plate data error:', err));
+                .catch(err => {
+                    console.log('Plate data error:', err);
+                    setSyncStatus(false, lang.syncError);
+                });
         }
 
         function buildPlateVelocityGroup() {
-            plateVelocityGroup = new THREE.Group();
-            globeGroup.add(plateVelocityGroup);
+            AppState.scene.plateVelocityGroup = new THREE.Group();
+            globeGroup.add(AppState.scene.plateVelocityGroup);
 
             tectonicVelocityCenters.forEach(center => {
                 for (let i = 0; i < center.count; i++) {
@@ -746,15 +899,15 @@
                     const ptEnd = ptSurface.clone().normalize().multiplyScalar(RADIUS + 0.6 + arrowLen);
                     
                     const arrowMesh = create3DVelocityArrow(ptSurface, ptEnd, center.color, center.speed);
-                    plateVelocityGroup.add(arrowMesh);
+                    AppState.scene.plateVelocityGroup.add(arrowMesh);
                 }
             });
-            plateVelocityGroup.visible = showPlates;
+            AppState.scene.plateVelocityGroup.visible = AppState.toggles.plates;
         }
 
         function buildStressFieldGroup() {
-            stressFieldGroup = new THREE.Group();
-            globeGroup.add(stressFieldGroup);
+            AppState.scene.stressFieldGroup = new THREE.Group();
+            globeGroup.add(AppState.scene.stressFieldGroup);
 
             const palette = [new THREE.Color('#e0e7ff'), new THREE.Color('#c084fc'), new THREE.Color('#38bdf8')];
             stressNebulaCenters.forEach(center => {
@@ -786,19 +939,19 @@
                     size: 1.8, vertexColors: true, map: createGlowPointTexture(), 
                     blending: THREE.AdditiveBlending, transparent: true, opacity: 0.35, depthWrite: false 
                 });
-                stressFieldGroup.add(new THREE.Points(geometry, material));
+                AppState.scene.stressFieldGroup.add(new THREE.Points(geometry, material));
             });
-            stressFieldGroup.visible = showStress;
+            AppState.scene.stressFieldGroup.visible = AppState.toggles.stress;
         }
 
+        // GPU 版本星雲擾動：擾動邏輯搬到 vertex shader，CPU 端每幀只更新一個 uniform
         function buildSpectralNebulaPointCloud() {
             let total = 0;
             stressNebulaCenters.forEach(c => total += c.count);
-            nebulaCount = total;
 
             const positions = new Float32Array(total * 3);
-            const basePositions = new Float32Array(total * 3);
             const colors = new Float32Array(total * 3);
+            const noiseSeeds = new Float32Array(total);
 
             const palette = [
                 new THREE.Color('#c084fc'),
@@ -827,9 +980,7 @@
                     positions[pIdx * 3 + 1] = pos.y;
                     positions[pIdx * 3 + 2] = pos.z;
 
-                    basePositions[pIdx * 3] = pos.x;
-                    basePositions[pIdx * 3 + 1] = pos.y;
-                    basePositions[pIdx * 3 + 2] = pos.z;
+                    noiseSeeds[pIdx] = i * 0.1;
 
                     const col = palette[Math.floor(Math.random() * palette.length)].clone();
                     colors[pIdx * 3] = col.r;
@@ -843,26 +994,60 @@
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('aSeed', new THREE.BufferAttribute(noiseSeeds, 1));
 
-            const material = new THREE.PointsMaterial({
-                size: 1.5,
+            AppState.scene.nebulaMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uRadius: { value: RADIUS },
+                    uTexture: { value: createGlowPointTexture() },
+                    uSize: { value: 1.5 }
+                },
+                vertexShader: `
+                    uniform float uTime;
+                    uniform float uRadius;
+                    uniform float uSize;
+                    attribute float aSeed;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = color;
+                        float noise = sin(uTime * 1.5 + aSeed) * 0.4;
+                        vec3 displaced = position + (position / uRadius) * noise;
+                        vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+                        gl_PointSize = uSize * (300.0 / -mvPosition.z);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D uTexture;
+                    varying vec3 vColor;
+                    void main() {
+                        vec4 tex = texture2D(uTexture, gl_PointCoord);
+                        gl_FragColor = vec4(vColor, 1.0) * tex;
+                        gl_FragColor.a *= 0.75;
+                    }
+                `,
                 vertexColors: true,
-                map: createGlowPointTexture(),
-                blending: THREE.AdditiveBlending,
                 transparent: true,
-                opacity: 0.75,
-                depthWrite: false
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
             });
 
-            nebulaPointsMesh = new THREE.Points(geometry, material);
-            nebulaPositions = positions;
-            nebulaBasePositions = basePositions;
-            globeGroup.add(nebulaPointsMesh);
+            AppState.scene.nebulaPointsMesh = new THREE.Points(geometry, AppState.scene.nebulaMaterial);
+            globeGroup.add(AppState.scene.nebulaPointsMesh);
+        }
+
+        function setSyncStatus(ok, textOverride) {
+            const el = document.getElementById('sync-status');
+            if (!el) return;
+            el.classList.toggle('error', !ok);
+            if (textOverride) el.innerText = textOverride;
         }
 
         async function refreshMultiSourceData() {
             const rawEvents = [];
             let activeSources = [];
+            let hadFailure = false;
 
             try {
                 const resUSGS = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson');
@@ -888,6 +1073,7 @@
                 activeSources.push("USGS");
             } catch (e) {
                 console.warn("USGS API Fallback", e);
+                hadFailure = true;
             }
 
             try {
@@ -915,6 +1101,7 @@
                 }
             } catch (e) {
                 console.warn("EMSC API Fallback", e);
+                hadFailure = true;
             }
 
             const deduplicatedReals = [];
@@ -938,18 +1125,22 @@
                 }
             });
 
-            const predictItems = allEarthquakeData.filter(d => d.type === "predict");
-            allEarthquakeData = [...predictItems, ...deduplicatedReals];
+            const predictItems = AppState.data.earthquakes.filter(d => d.type === "predict");
+            AppState.data.earthquakes = [...predictItems, ...deduplicatedReals];
 
-            const sourceText = activeSources.length > 0 ? activeSources.join(" + ") : "Cache";
-            document.getElementById('sync-status').innerText = `已同步 ${sourceText} 即時數據 (${allEarthquakeData.length} 筆)`;
+            if (activeSources.length > 0) {
+                const sourceText = activeSources.join(" + ");
+                setSyncStatus(true, `已同步 ${sourceText} 即時數據 (${AppState.data.earthquakes.length} 筆)`);
+            } else {
+                setSyncStatus(false, lang.syncError);
+            }
             filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
         }
 
         function filterEventsByTimeline(percentage) {
-            if (allEarthquakeData.length === 0) return;
-            const predicts = allEarthquakeData.filter(e => e.type === 'predict');
-            const reals = allEarthquakeData.filter(e => e.type === 'real');
+            if (AppState.data.earthquakes.length === 0) return;
+            const predicts = AppState.data.earthquakes.filter(e => e.type === 'predict');
+            const reals = AppState.data.earthquakes.filter(e => e.type === 'real');
 
             let activeEvents = [...predicts];
 
@@ -968,7 +1159,7 @@
         }
 
         function rebuildMarkersAndControls(activeEvents) {
-            markerObjects.forEach(m => {
+            AppState.scene.markerObjects.forEach(m => {
                 globeGroup.remove(m.dot);
                 globeGroup.remove(m.ring1);
                 globeGroup.remove(m.ring2);
@@ -984,14 +1175,14 @@
                 if (m.pillar) disposeObject(m.pillar);
             });
 
-            tsunamiWaveRings.forEach(tw => {
+            AppState.scene.tsunamiWaveRings.forEach(tw => {
                 globeGroup.remove(tw.mesh);
                 disposeObject(tw.mesh);
             });
 
-            markerObjects = [];
-            clickableHitTargets = [];
-            tsunamiWaveRings = [];
+            AppState.scene.markerObjects = [];
+            AppState.scene.clickableHitTargets = [];
+            AppState.scene.tsunamiWaveRings = [];
 
             activeEvents.forEach((eq, idx) => {
                 const isPredict = eq.type === 'predict';
@@ -1034,7 +1225,7 @@
                 hitMesh.position.copy(posSurface);
                 hitMesh.userData = { eventIndex: idx };
                 globeGroup.add(hitMesh);
-                clickableHitTargets.push(hitMesh);
+                AppState.scene.clickableHitTargets.push(hitMesh);
 
                 globeGroup.add(dotMesh);
                 globeGroup.add(ringMesh1);
@@ -1049,10 +1240,10 @@
                         const tMesh = new THREE.Mesh(tGeo, tMat);
                         tMesh.position.copy(posSurface);
                         tMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                        tMesh.visible = showTsunami;
+                        tMesh.visible = AppState.toggles.tsunami;
                         globeGroup.add(tMesh);
 
-                        tsunamiWaveRings.push({
+                        AppState.scene.tsunamiWaveRings.push({
                             mesh: tMesh,
                             scale: 1.0 + w * 3.5,
                             speed: 0.025,
@@ -1061,7 +1252,7 @@
                     }
                 }
 
-                markerObjects.push({
+                AppState.scene.markerObjects.push({
                     dot: dotMesh,
                     hitSphere: hitMesh,
                     pillar: pillarMesh,
@@ -1081,7 +1272,7 @@
                 const btn = document.createElement('button');
                 btn.className = `btn-step ${eq.type === 'predict' ? 'predict-btn' : ''}`;
                 btn.id = `btn-step-${idx}`;
-                const shortName = eq.location.split(',')[0].split(' of ')[1] || eq.location.split(' ')[0];
+                const shortName = getShortEventLabel(eq.location);
                 btn.innerText = `${idx + 1}. ${eq.type === 'predict' ? lang.predictPrefix : ''}${shortName}`;
                 btn.onclick = () => { focusEvent(idx, true, true); };
                 bar.appendChild(btn);
@@ -1096,7 +1287,14 @@
             cams.forEach(cam => {
                 const item = document.createElement('div');
                 item.className = 'info-list-item';
-                item.innerHTML = `<div class="info-link">📷 ${cam.title}</div><div class="info-meta">類型: ${cam.type} · 更新: ${cam.time}</div>`;
+                const linkEl = document.createElement('div');
+                linkEl.className = 'info-link';
+                linkEl.textContent = `📷 ${cam.title}`;
+                const metaEl = document.createElement('div');
+                metaEl.className = 'info-meta';
+                metaEl.textContent = `類型: ${cam.type} · 更新: ${cam.time}`;
+                item.appendChild(linkEl);
+                item.appendChild(metaEl);
                 webcamContent.appendChild(item);
             });
 
@@ -1106,13 +1304,20 @@
             news.forEach(n => {
                 const item = document.createElement('div');
                 item.className = 'info-list-item';
-                item.innerHTML = `<div class="info-link">📰 ${n.title}</div><div class="info-meta">來源: ${n.media}</div>`;
+                const linkEl = document.createElement('div');
+                linkEl.className = 'info-link';
+                linkEl.textContent = `📰 ${n.title}`;
+                const metaEl = document.createElement('div');
+                metaEl.className = 'info-meta';
+                metaEl.textContent = `來源: ${n.media}`;
+                item.appendChild(linkEl);
+                item.appendChild(metaEl);
                 newsContent.appendChild(item);
             });
         }
 
         function drawCrossSection(data) {
-            if (!showSection) return;
+            if (!AppState.toggles.section) return;
             const w = sectionCanvas.width;
             const h = sectionCanvas.height;
             sCtx.clearRect(0, 0, w, h);
@@ -1189,9 +1394,9 @@
         }
 
         function focusEvent(index, updateUrl = true, shouldZoom = true) {
-            if (!markerObjects[index]) return;
-            currentIndex = index;
-            const target = markerObjects[index];
+            if (!AppState.scene.markerObjects[index]) return;
+            AppState.view.currentIndex = index;
+            const target = AppState.scene.markerObjects[index];
 
             document.querySelectorAll('.btn-step').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-step-${index}`);
@@ -1200,11 +1405,11 @@
                 activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }
 
-            targetRotationY = -target.data.lng * (Math.PI / 180) - (Math.PI / 2);
-            targetRotationX = target.data.lat * (Math.PI / 180);
+            AppState.view.targetRotationY = -target.data.lng * (Math.PI / 180) - (Math.PI / 2);
+            AppState.view.targetRotationX = target.data.lat * (Math.PI / 180);
 
             if (shouldZoom) {
-                targetCameraDist = 175;
+                AppState.view.targetCameraDist = 175;
             }
 
             const badge = document.getElementById('c-badge');
@@ -1259,18 +1464,11 @@
                 startY = e.clientY;
             });
 
+            // 節流：滑鼠移動只記錄座標，實際 raycast 交給 rAF 迴圈統一處理
             window.addEventListener('pointermove', (e) => {
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(clickableHitTargets);
-
-                if (intersects.length > 0) {
-                    document.body.style.cursor = 'pointer';
-                } else {
-                    document.body.style.cursor = 'default';
-                }
+                AppState.interaction.pendingHoverCheck = true;
             });
 
             window.addEventListener('pointerup', (e) => {
@@ -1282,7 +1480,7 @@
                     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
                     raycaster.setFromCamera(mouse, camera);
-                    const intersects = raycaster.intersectObjects(clickableHitTargets);
+                    const intersects = raycaster.intersectObjects(AppState.scene.clickableHitTargets);
 
                     if (intersects.length > 0) {
                         const targetEventIdx = intersects[0].object.userData.eventIndex;
@@ -1294,6 +1492,15 @@
             });
         }
 
+        function updateHoverState() {
+            if (!AppState.interaction.pendingHoverCheck) return;
+            AppState.interaction.pendingHoverCheck = false;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(AppState.scene.clickableHitTargets);
+            document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+        }
+
         function handleDeepLinkRouting() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetId = urlParams.get('id');
@@ -1301,7 +1508,7 @@
             const paramLng = parseFloat(urlParams.get('lng'));
 
             if (targetId) {
-                const foundIdx = allEarthquakeData.findIndex(e => e.id === targetId);
+                const foundIdx = AppState.data.earthquakes.findIndex(e => e.id === targetId);
                 if (foundIdx !== -1) {
                     setTimeout(() => {
                         focusEvent(foundIdx, false, true);
@@ -1327,39 +1534,39 @@
 
             const playBtn = document.getElementById('btn-timeline-play');
             playBtn.onclick = () => {
-                if (isTimelinePlaying) { stopTimelinePlay(); } else { startTimelinePlay(); }
+                if (AppState.timeline.isPlaying) { stopTimelinePlay(); } else { startTimelinePlay(); }
             };
 
             document.getElementById('btn-toggle-nebula').onclick = function() {
-                showNebula = !showNebula;
-                this.classList.toggle('active', showNebula);
-                if (nebulaPointsMesh) nebulaPointsMesh.visible = showNebula;
+                AppState.toggles.nebula = !AppState.toggles.nebula;
+                this.classList.toggle('active', AppState.toggles.nebula);
+                if (AppState.scene.nebulaPointsMesh) AppState.scene.nebulaPointsMesh.visible = AppState.toggles.nebula;
             };
 
             document.getElementById('btn-toggle-tsunami').onclick = function() {
-                showTsunami = !showTsunami;
-                this.classList.toggle('active', showTsunami);
-                tsunamiWaveRings.forEach(tw => tw.mesh.visible = showTsunami);
+                AppState.toggles.tsunami = !AppState.toggles.tsunami;
+                this.classList.toggle('active', AppState.toggles.tsunami);
+                AppState.scene.tsunamiWaveRings.forEach(tw => tw.mesh.visible = AppState.toggles.tsunami);
             };
 
             document.getElementById('btn-toggle-section').onclick = function() {
-                showSection = !showSection;
-                this.classList.toggle('active', showSection);
-                document.getElementById('cross-section-panel').style.display = showSection ? 'block' : 'none';
-                if (showSection && markerObjects[currentIndex]) { drawCrossSection(markerObjects[currentIndex].data); }
+                AppState.toggles.section = !AppState.toggles.section;
+                this.classList.toggle('active', AppState.toggles.section);
+                document.getElementById('cross-section-panel').style.display = AppState.toggles.section ? 'block' : 'none';
+                if (AppState.toggles.section && AppState.scene.markerObjects[AppState.view.currentIndex]) { drawCrossSection(AppState.scene.markerObjects[AppState.view.currentIndex].data); }
             };
 
             // 本次新增：切換板塊向量與應力場按鈕
             document.getElementById('btn-toggle-plates').onclick = function() {
-                showPlates = !showPlates;
-                this.classList.toggle('active', showPlates);
-                if (plateVelocityGroup) plateVelocityGroup.visible = showPlates;
+                AppState.toggles.plates = !AppState.toggles.plates;
+                this.classList.toggle('active', AppState.toggles.plates);
+                if (AppState.scene.plateVelocityGroup) AppState.scene.plateVelocityGroup.visible = AppState.toggles.plates;
             };
 
             document.getElementById('btn-toggle-stress').onclick = function() {
-                showStress = !showStress;
-                this.classList.toggle('active', showStress);
-                if (stressFieldGroup) stressFieldGroup.visible = showStress;
+                AppState.toggles.stress = !AppState.toggles.stress;
+                this.classList.toggle('active', AppState.toggles.stress);
+                if (AppState.scene.stressFieldGroup) AppState.scene.stressFieldGroup.visible = AppState.toggles.stress;
             };
 
             document.getElementById('btn-share-link').onclick = () => {
@@ -1384,11 +1591,11 @@
         }
 
         function startTimelinePlay() {
-            isTimelinePlaying = true;
+            AppState.timeline.isPlaying = true;
             document.getElementById('btn-timeline-play').innerText = '❚❚';
             const slider = document.getElementById('timeline-slider');
             if (parseInt(slider.value) >= 100) slider.value = 0;
-            timelineTimer = setInterval(() => {
+            AppState.timeline.timerId = setInterval(() => {
                 let val = parseInt(slider.value) + 1;
                 if (val > 100) { stopTimelinePlay(); } else {
                     slider.value = val;
@@ -1398,14 +1605,17 @@
         }
 
         function stopTimelinePlay() {
-            isTimelinePlaying = false;
+            AppState.timeline.isPlaying = false;
             document.getElementById('btn-timeline-play').innerText = '▶';
-            clearInterval(timelineTimer);
+            clearInterval(AppState.timeline.timerId);
         }
 
         function updateDialogPosition() {
-            if (markerObjects.length === 0 || !markerObjects[currentIndex]) return;
-            const currentMarker = markerObjects[currentIndex];
+            if (AppState.scene.markerObjects.length === 0 || !AppState.scene.markerObjects[AppState.view.currentIndex]) {
+                if (dialogCard.style.display !== 'none') dialogCard.style.display = 'none';
+                return;
+            }
+            const currentMarker = AppState.scene.markerObjects[AppState.view.currentIndex];
             const worldPos = currentMarker.pos.clone().applyMatrix4(globeGroup.matrixWorld);
             const screenPos = worldPos.project(camera);
             const x = (screenPos.x * .5 + .5) * window.innerWidth;
@@ -1428,13 +1638,13 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            globalClock += 0.03;
+            AppState.view.clock += 0.03;
 
-            globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.05;
-            globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.05;
-            camera.position.z += (targetCameraDist - camera.position.z) * 0.05;
+            globeGroup.rotation.y += (AppState.view.targetRotationY - globeGroup.rotation.y) * 0.05;
+            globeGroup.rotation.x += (AppState.view.targetRotationX - globeGroup.rotation.x) * 0.05;
+            camera.position.z += (AppState.view.targetCameraDist - camera.position.z) * 0.05;
 
-            markerObjects.forEach(m => {
+            AppState.scene.markerObjects.forEach(m => {
                 m.scale1 += 0.01; if (m.scale1 > 3.8) m.scale1 = 1.0;
                 m.ring1.scale.set(m.scale1, m.scale1, 1);
                 m.ring1.material.opacity = Math.max(0, (3.8 - m.scale1) / 2.8);
@@ -1444,8 +1654,8 @@
                 m.ring2.material.opacity = Math.max(0, (3.8 - m.scale2) / 2.8);
             });
 
-            if (showTsunami) {
-                tsunamiWaveRings.forEach(tw => {
+            if (AppState.toggles.tsunami) {
+                AppState.scene.tsunamiWaveRings.forEach(tw => {
                     tw.scale += tw.speed;
                     if (tw.scale > tw.maxScale) tw.scale = 1.0;
                     tw.mesh.scale.set(tw.scale, tw.scale, 1);
@@ -1453,29 +1663,20 @@
                 });
             }
 
-            if (showNebula && nebulaPointsMesh && nebulaPositions) {
-                for (let i = 0; i < nebulaCount; i++) {
-                    const i3 = i * 3;
-                    const bx = nebulaBasePositions[i3];
-                    const by = nebulaBasePositions[i3 + 1];
-                    const bz = nebulaBasePositions[i3 + 2];
-
-                    const noise = Math.sin(globalClock * 1.5 + i * 0.1) * 0.4;
-                    nebulaPositions[i3] = bx + (bx / RADIUS) * noise;
-                    nebulaPositions[i3 + 1] = by + (by / RADIUS) * noise;
-                    nebulaPositions[i3 + 2] = bz + (bz / RADIUS) * noise;
-                }
-                nebulaPointsMesh.geometry.attributes.position.needsUpdate = true;
+            // GPU shader 版本：CPU 端每幀只更新一個 uniform，不再逐點運算
+            if (AppState.toggles.nebula && AppState.scene.nebulaMaterial) {
+                AppState.scene.nebulaMaterial.uniforms.uTime.value = AppState.view.clock;
             }
 
-            // 本次新增：月球應力梯度場呼吸閃爍效果
-            if (showStress && stressFieldGroup) {
-                const breathing = 0.35 + Math.sin(globalClock * 2) * 0.1;
-                stressFieldGroup.children.forEach(points => {
+            // 月球應力梯度場呼吸閃爍效果
+            if (AppState.toggles.stress && AppState.scene.stressFieldGroup) {
+                const breathing = 0.35 + Math.sin(AppState.view.clock * 2) * 0.1;
+                AppState.scene.stressFieldGroup.children.forEach(points => {
                     points.material.opacity = breathing;
                 });
             }
 
+            updateHoverState();
             controls.update();
             updateDialogPosition();
             renderer.render(scene, camera);
@@ -1513,13 +1714,13 @@
         }
 
         function focusOnCoordinates(lat, lng) {
-            targetRotationY = -lng * (Math.PI / 180) - (Math.PI / 2);
-            targetRotationX = lat * (Math.PI / 180);
+            AppState.view.targetRotationY = -lng * (Math.PI / 180) - (Math.PI / 2);
+            AppState.view.targetRotationX = lat * (Math.PI / 180);
 
             let closestIdx = 0;
             let minDistance = Infinity;
 
-            allEarthquakeData.forEach((eq, idx) => {
+            AppState.data.earthquakes.forEach((eq, idx) => {
                 const d = Math.hypot(eq.lat - lat, eq.lng - lng);
                 if (d < minDistance) {
                     minDistance = d;
