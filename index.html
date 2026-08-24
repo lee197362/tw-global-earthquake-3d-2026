@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全球板塊構造動力學與海嘯擴散多功能監測平台</title>
+    <title>Global Tectonic Dynamics & Real-time Earthquake Platform</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -15,7 +15,6 @@
         }
         #webgl-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        /* 頂部資訊列 */
         .header {
             position: absolute;
             top: 20px;
@@ -46,7 +45,6 @@
             border: 1px solid rgba(34, 197, 94, 0.3);
         }
 
-        /* 視圖切換按鈕組 */
         .view-controls {
             position: absolute;
             top: 20px;
@@ -73,7 +71,6 @@
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
         }
 
-        /* 斷層剖面視窗 HUD */
         #cross-section-panel {
             position: absolute;
             top: 70px;
@@ -110,7 +107,6 @@
             line-height: 1.4;
         }
 
-        /* 浮動資訊對話框 */
         #dialog-card {
             position: absolute;
             z-index: 20;
@@ -139,7 +135,6 @@
         .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
         .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
 
-        /* 底部時序回放滑桿與控制條 */
         .timeline-container {
             position: absolute;
             bottom: 24px;
@@ -225,29 +220,26 @@
 <body>
 
     <div class="header">
-        <h1>全球板塊構造動力學與海嘯擴散平台</h1>
-        <p>多維時序回放 · 海嘯波前傳播模擬 · 即時斷層俯衝剖面圖</p>
+        <h1 id="ui-title">全球板塊構造動力學與海嘯擴散平台</h1>
+        <p id="ui-subtitle">多維時序回放 · 海嘯波前傳播模擬 · 即時斷層俯衝剖面圖</p>
         <div class="sync-badge" id="sync-status">USGS API 連線同步中...</div>
     </div>
 
-    <!-- 視圖切換選單 -->
     <div class="view-controls">
         <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
         <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前模擬</button>
         <button class="btn-mode active" id="btn-toggle-section">斷層剖面儀</button>
     </div>
 
-    <!-- 斷層剖面 HUD -->
     <div id="cross-section-panel">
         <div class="hud-title">
-            <span>斷層幾何與震源剖面分析</span>
+            <span id="ui-section-title">斷層幾何與震源剖面分析</span>
             <span id="hud-subduction-angle">俯衝傾角: 28°</span>
         </div>
         <canvas id="section-canvas" width="308" height="150"></canvas>
         <div class="section-note" id="hud-section-note">點選任一地震事件，將即時演算板塊界面應力、莫氏不連續面與震源破裂機制。</div>
     </div>
 
-    <!-- 浮動資訊卡片 -->
     <div id="dialog-card">
         <span class="badge-type real" id="c-badge">實際發生</span>
         <span class="badge-type tsunami" id="c-tsunami-badge" style="display:none;">海嘯風險</span>
@@ -260,11 +252,10 @@
         <div class="card-desc" id="c-desc">--</div>
     </div>
 
-    <!-- 底部時序回放控制台 -->
     <div class="timeline-container">
         <div class="timeline-top-row">
-            <span style="color:#94a3b8;">📅 時序回放範圍：<b id="lbl-timeline-date" style="color:#38bdf8;">全部時間</b></span>
-            <span style="color:#94a3b8;">顯示中事件：<b id="lbl-event-count" style="color:#f97316;">--</b> 筆</span>
+            <span style="color:#94a3b8;"><span id="ui-timeline-label">📅 時序回放範圍：</span><b id="lbl-timeline-date" style="color:#38bdf8;">全部時間</b></span>
+            <span style="color:#94a3b8;"><span id="ui-events-label">顯示中事件：</span><b id="lbl-event-count" style="color:#f97316;">--</b> 筆</span>
         </div>
         <div class="timeline-slider-row">
             <button class="slider-play-btn" id="btn-timeline-play">▶</button>
@@ -281,11 +272,86 @@
     <script>
         const API_POLL_INTERVAL = 300000;
 
-        // 核心資料庫 (包含時間戳記以供時序滑桿精確過濾)
+        // 多國語言字典 (i18n)
+        const i18nDict = {
+            "zh-TW": {
+                title: "全球板塊構造動力學與海嘯擴散平台",
+                subtitle: "多維時序回放 · 海嘯波前傳播模擬 · 即時斷層俯衝剖面圖",
+                syncing: "USGS API 連線同步中...",
+                synced: "已同步 USGS 即時數據",
+                btnNebula: "應力星雲",
+                btnTsunami: "海嘯波前模擬",
+                btnSection: "斷層剖面儀",
+                sectionTitle: "斷層幾何與震源剖面分析",
+                timelineLabel: "📅 時序回放範圍：",
+                eventsLabel: "顯示中事件：",
+                allTime: "全部時間",
+                badgeReal: "實際發生",
+                badgePredict: "科學預警",
+                badgeTsunami: "海嘯風險",
+                predictPrefix: "[預測]",
+                depthLabel: "深度"
+            },
+            "en": {
+                title: "Global Tectonic Dynamics & Real-time Monitoring",
+                subtitle: "Time-lapse Playback · Tsunami Propagation · Real-time Cross-Section HUD",
+                syncing: "Syncing USGS API...",
+                synced: "USGS Real-time Synced",
+                btnNebula: "Stress Nebula",
+                btnTsunami: "Tsunami Sim",
+                btnSection: "Cross-Section",
+                sectionTitle: "Fault Geometry & Hypocenter",
+                timelineLabel: "📅 Time Range: ",
+                eventsLabel: "Active Events: ",
+                allTime: "All Time",
+                badgeReal: "Observed",
+                badgePredict: "Forecast",
+                badgeTsunami: "Tsunami Risk",
+                predictPrefix: "[Forecast]",
+                depthLabel: "Depth"
+            },
+            "ja": {
+                title: "全球プレートダイナミクス・リアルタイム地震監視",
+                subtitle: "時系列再生 · 津波伝播シミュレーション · 断層断面HUD",
+                syncing: "USGS API 同期中...",
+                synced: "USGS リアルタイム同期完了",
+                btnNebula: "応力星雲",
+                btnTsunami: "津波シミュレーション",
+                btnSection: "断層断面図",
+                sectionTitle: "断層構造・震源断面解析",
+                timelineLabel: "📅 再生範囲：",
+                eventsLabel: "表示イベント：",
+                allTime: "全期間",
+                badgeReal: "観測地震",
+                badgePredict: "予測エリア",
+                badgeTsunami: "津波注意",
+                predictPrefix: "[予測]",
+                depthLabel: "深さ"
+            }
+        };
+
+        // 自動判斷語言
+        const userLang = navigator.language.startsWith('zh') ? 'zh-TW' : (navigator.language.startsWith('ja') ? 'ja' : 'en');
+        const lang = i18nDict[userLang] || i18nDict['en'];
+
+        function applyLanguage() {
+            document.getElementById('ui-title').innerText = lang.title;
+            document.getElementById('ui-subtitle').innerText = lang.subtitle;
+            document.getElementById('sync-status').innerText = lang.syncing;
+            document.getElementById('btn-toggle-nebula').innerText = lang.btnNebula;
+            document.getElementById('btn-toggle-tsunami').innerText = lang.btnTsunami;
+            document.getElementById('btn-toggle-section').innerText = lang.btnSection;
+            document.getElementById('ui-section-title').innerText = lang.sectionTitle;
+            document.getElementById('ui-timeline-label').innerText = lang.timelineLabel;
+            document.getElementById('ui-events-label').innerText = lang.eventsLabel;
+            document.getElementById('lbl-timeline-date').innerText = lang.allTime;
+        }
+
+        // 預設資料
         let allEarthquakeData = [
             {
                 id: "p1", type: "predict",
-                timestamp: new Date("2026-09-01").getTime(),
+                timestamp: new Date("2026-12-31").getTime(),
                 date: "預測視窗：2026 Q3-Q4",
                 location: "台灣東部外海 (琉球海溝段)",
                 lat: 23.8, lng: 122.5,
@@ -295,7 +361,7 @@
             },
             {
                 id: "p2", type: "predict",
-                timestamp: new Date("2026-10-15").getTime(),
+                timestamp: new Date("2026-12-31").getTime(),
                 date: "預測視窗：2026 下半年",
                 location: "南美洲 中段隱沒帶 (祕魯/智利交界)",
                 lat: -18.5, lng: -70.3,
@@ -335,7 +401,6 @@
             }
         ];
 
-        // 應力星雲斷層聚集中心點
         const stressNebulaCenters = [
             { lat: 35.0, lng: 140.0, count: 350, radiusDeg: 7.0 },
             { lat: 23.5, lng: 122.0, count: 300, radiusDeg: 5.5 },
@@ -348,13 +413,12 @@
         const RADIUS = 100;
         let scene, camera, renderer, controls, globeGroup;
         let markerObjects = [];
-        let tsunamiWaveRings = []; // 海嘯波前模擬網格陣列
+        let tsunamiWaveRings = [];
         let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
         let wireframeMesh;
         let currentIndex = 0;
         let globalClock = 0;
 
-        // 功能開關狀態
         let showNebula = true;
         let showTsunami = true;
         let showSection = true;
@@ -410,6 +474,8 @@
         }
 
         async function init() {
+            applyLanguage();
+
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
             camera.position.set(0, 30, 280);
@@ -428,7 +494,6 @@
             globeGroup = new THREE.Group();
             scene.add(globeGroup);
 
-            // 地球紋理與地貌
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             const bumpTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
@@ -444,13 +509,11 @@
             const earthMesh = new THREE.Mesh(earthGeo, earthMat);
             globeGroup.add(earthMesh);
 
-            // 外骨骼幾何線網
             const wireframeGeo = new THREE.IcosahedronGeometry(RADIUS * 1.04, 3);
             const wireframeMat = new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.16 });
             wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
             globeGroup.add(wireframeMesh);
 
-            // 大氣層光暈
             const atmosphereGeo = new THREE.SphereGeometry(RADIUS * 1.015, 64, 64);
             const atmosphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.12, side: THREE.BackSide });
             globeGroup.add(new THREE.Mesh(atmosphereGeo, atmosphereMat));
@@ -463,7 +526,6 @@
             loadTectonicPlates();
             buildSpectralNebulaPointCloud();
 
-            // 抓取即時資料並綁定 UI 事件
             await refreshUSGSData();
             setInterval(refreshUSGSData, API_POLL_INTERVAL);
 
@@ -471,7 +533,7 @@
             window.addEventListener('resize', onWindowResize);
             
             filterEventsByTimeline(100);
-            focusEvent(0);
+            autoLocateUserTimezone();
             animate();
         }
 
@@ -568,7 +630,8 @@
                 const response = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson');
                 const data = await response.json();
                 
-                allEarthquakeData = allEarthquakeData.filter(d => !d.id.startsWith("usgs_"));
+                const predictItems = allEarthquakeData.filter(d => d.type === "predict");
+                const realItems = [];
 
                 data.features.forEach(eq => {
                     const mag = eq.properties.mag;
@@ -581,11 +644,11 @@
                         const time = eq.properties.time;
                         const timeStr = new Date(time).toISOString().split('T')[0];
                         
-                        allEarthquakeData.push({
+                        realItems.push({
                             id: "usgs_" + eq.id,
                             type: "real",
                             timestamp: time,
-                            date: timeStr + " (USGS即時)",
+                            date: timeStr + " (USGS)",
                             location: place,
                             lat: lat,
                             lng: lng,
@@ -593,39 +656,47 @@
                             depth: Math.round(depth),
                             dipAngle: Math.floor(20 + Math.random() * 25),
                             isOceanic: Math.abs(lat) < 55 && depth < 60,
-                            desc: `USGS 自動回報。震央座標 [${lat.toFixed(2)}, ${lng.toFixed(2)}]，深度 ${depth} km。`
+                            desc: `USGS: [${lat.toFixed(2)}, ${lng.toFixed(2)}], ${lang.depthLabel} ${depth} km.`
                         });
                     }
                 });
 
-                // 依照時間排序
-                allEarthquakeData.sort((a, b) => a.timestamp - b.timestamp);
+                // 時間排序
+                realItems.sort((a, b) => a.timestamp - b.timestamp);
 
-                document.getElementById('sync-status').innerText = `已同步 USGS 即時數據 (共 ${allEarthquakeData.length} 筆)`;
+                // 【關鍵排序修復】：預測項目置頂排在最前面，歷史事件排在其後
+                allEarthquakeData = [...predictItems, ...realItems];
+
+                document.getElementById('sync-status').innerText = `${lang.synced} (${allEarthquakeData.length})`;
                 filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
             } catch (e) {
                 console.log("USGS API Fallback", e);
-                document.getElementById('sync-status').innerText = 'USGS 連線逾時，使用快取數據';
+                document.getElementById('sync-status').innerText = 'USGS Offline';
             }
         }
 
-        // 依據時間軸滑桿篩選事件
         function filterEventsByTimeline(percentage) {
             if (allEarthquakeData.length === 0) return;
-            const minTime = allEarthquakeData[0].timestamp;
-            const maxTime = allEarthquakeData[allEarthquakeData.length - 1].timestamp;
-            const cutoffTime = minTime + (maxTime - minTime) * (percentage / 100);
+            const predicts = allEarthquakeData.filter(e => e.type === 'predict');
+            const reals = allEarthquakeData.filter(e => e.type === 'real');
 
-            const activeEvents = allEarthquakeData.filter(e => e.timestamp <= cutoffTime);
+            let activeEvents = [...predicts];
+
+            if (reals.length > 0) {
+                const minTime = reals[0].timestamp;
+                const maxTime = reals[reals.length - 1].timestamp;
+                const cutoffTime = minTime + (maxTime - minTime) * (percentage / 100);
+                const filteredReals = reals.filter(e => e.timestamp <= cutoffTime);
+                activeEvents = [...predicts, ...filteredReals];
+
+                document.getElementById('lbl-timeline-date').innerText = percentage >= 100 ? lang.allTime : new Date(cutoffTime).toISOString().split('T')[0];
+            }
 
             document.getElementById('lbl-event-count').innerText = activeEvents.length;
-            document.getElementById('lbl-timeline-date').innerText = percentage >= 100 ? "全部事件" : new Date(cutoffTime).toISOString().split('T')[0];
-
             rebuildMarkersAndControls(activeEvents);
         }
 
         function rebuildMarkersAndControls(activeEvents) {
-            // 清除舊物件
             markerObjects.forEach(m => {
                 globeGroup.remove(m.dot);
                 globeGroup.remove(m.ring1);
@@ -641,13 +712,11 @@
                 const isPredict = eq.type === 'predict';
                 const color = isPredict ? 0xeab308 : 0xef4444;
 
-                // 核心圓點
                 const dotGeo = new THREE.SphereGeometry(0.7, 12, 12);
                 const dotMat = new THREE.MeshBasicMaterial({ color: color });
                 const dotMesh = new THREE.Mesh(dotGeo, dotMat);
                 dotMesh.position.copy(pos);
 
-                // 鏤空中空波紋環
                 const ringGeo = new THREE.RingGeometry(1.2, 1.45, 32);
                 const ringMat1 = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
                 const ringMesh1 = new THREE.Mesh(ringGeo, ringMat1);
@@ -659,7 +728,6 @@
                 ringMesh2.position.copy(pos);
                 ringMesh2.lookAt(new THREE.Vector3(0, 0, 0));
 
-                // 數值 Sprite
                 const sprite = createTextSprite(eq.mag, isPredict);
                 const textPos = latLngToVector3(eq.lat, eq.lng, RADIUS + 4.2);
                 sprite.position.copy(textPos);
@@ -669,7 +737,6 @@
                 globeGroup.add(ringMesh2);
                 globeGroup.add(sprite);
 
-                // 若為海域淺層強震 (M >= 7.0 且 depth < 70km)，建立海嘯波傳播擴散圈
                 const numMag = parseFloat(eq.mag.replace(/[^0-9.]/g, ''));
                 if (eq.isOceanic && numMag >= 7.0 && eq.depth < 70) {
                     for (let w = 0; w < 3; w++) {
@@ -702,7 +769,7 @@
                 });
             });
 
-            // 重新生成底部快捷按鈕
+            // 產生底部按鈕（預測排在最前）
             const bar = document.getElementById('events-btn-container');
             bar.innerHTML = '';
             activeEvents.forEach((eq, idx) => {
@@ -710,20 +777,18 @@
                 btn.className = `btn-step ${eq.type === 'predict' ? 'predict-btn' : ''}`;
                 btn.id = `btn-step-${idx}`;
                 const shortName = eq.location.split(',')[0].split(' of ')[1] || eq.location.split(' ')[0];
-                btn.innerText = `${idx + 1}. ${eq.type === 'predict' ? '[預測]' : ''}${shortName}`;
+                btn.innerText = `${idx + 1}. ${eq.type === 'predict' ? lang.predictPrefix : ''}${shortName}`;
                 btn.onclick = () => { focusEvent(idx); };
                 bar.appendChild(btn);
             });
         }
 
-        // 繪製自訂斷層地質剖面圖
         function drawCrossSection(data) {
             if (!showSection) return;
             const w = sectionCanvas.width;
             const h = sectionCanvas.height;
             sCtx.clearRect(0, 0, w, h);
 
-            // 背景地層漸層
             const bgGrad = sCtx.createLinearGradient(0, 0, 0, h);
             bgGrad.addColorStop(0, "#0c1527");
             bgGrad.addColorStop(0.5, "#172554");
@@ -731,18 +796,16 @@
             sCtx.fillStyle = bgGrad;
             sCtx.fillRect(0, 0, w, h);
 
-            // 海洋層 (若為海域)
             if (data.isOceanic) {
                 sCtx.fillStyle = "rgba(6, 182, 212, 0.35)";
                 sCtx.fillRect(0, 0, w * 0.55, 14);
                 sCtx.fillStyle = "#38bdf8";
                 sCtx.font = "9px sans-serif";
-                sCtx.fillText("海洋層 (Sea)", 10, 10);
+                sCtx.fillText("Sea Level", 10, 10);
             }
 
             const dip = (data.dipAngle || 30) * (Math.PI / 180);
 
-            // 1. 隱沒板塊 (下插大洋岩石圈)
             sCtx.beginPath();
             sCtx.moveTo(0, 15);
             sCtx.lineTo(w * 0.45, 15);
@@ -757,7 +820,6 @@
             sCtx.lineWidth = 1.5;
             sCtx.stroke();
 
-            // 2. 上盤陸塊/島弧
             sCtx.beginPath();
             sCtx.moveTo(w * 0.48, 15);
             sCtx.lineTo(w, 15);
@@ -770,7 +832,6 @@
             sCtx.lineWidth = 1.5;
             sCtx.stroke();
 
-            // 3. 莫氏不連續面 (Moho 虛線)
             sCtx.setLineDash([4, 4]);
             sCtx.strokeStyle = "rgba(148, 163, 184, 0.5)";
             sCtx.beginPath();
@@ -781,9 +842,8 @@
 
             sCtx.fillStyle = "#94a3b8";
             sCtx.font = "9px sans-serif";
-            sCtx.fillText("莫氏不連續面 (Moho)", w - 95, 36);
+            sCtx.fillText("Moho", w - 45, 36);
 
-            // 4. 震源破裂點標註 (Focus / Hypocenter)
             const focusX = w * 0.45 + (data.depth / 150) * (w * 0.35);
             const focusY = 15 + Math.sin(dip) * (data.depth * 0.8);
 
@@ -792,20 +852,13 @@
             sCtx.arc(focusX, Math.min(focusY, h - 25), 5, 0, Math.PI * 2);
             sCtx.fill();
 
-            // 震源向外微震波
-            sCtx.strokeStyle = data.type === 'predict' ? "rgba(234, 179, 8, 0.8)" : "rgba(239, 68, 68, 0.8)";
-            sCtx.beginPath();
-            sCtx.arc(focusX, Math.min(focusY, h - 25), 10, 0, Math.PI * 2);
-            sCtx.stroke();
-
             sCtx.fillStyle = "#fff";
             sCtx.font = "bold 10px sans-serif";
-            sCtx.fillText(`★ 震源深: ${data.depth} km`, focusX - 30, Math.min(focusY, h - 25) - 12);
+            sCtx.fillText(`★ ${data.depth} km`, focusX - 20, Math.min(focusY, h - 25) - 10);
 
-            // 更新 HUD 文字
-            document.getElementById('hud-subduction-angle').innerText = `隱沒傾角: ${data.dipAngle || 28}°`;
+            document.getElementById('hud-subduction-angle').innerText = `Dip: ${data.dipAngle || 28}°`;
             document.getElementById('hud-section-note').innerText = 
-                `${data.location}：深度 ${data.depth} km。${data.isOceanic ? '海溝型板塊界面逆衝' : '陸內/深部變形'}破裂。`;
+                `${data.location} | ${lang.depthLabel} ${data.depth} km.`;
         }
 
         function focusEvent(index) {
@@ -823,16 +876,17 @@
             const badge = document.getElementById('c-badge');
             if (target.data.type === 'predict') {
                 badge.className = 'badge-type predict';
-                badge.innerText = '科學預測高風險區';
+                badge.innerText = lang.badgePredict;
             } else {
                 badge.className = 'badge-type real';
-                badge.innerText = '實際發生地震';
+                badge.innerText = lang.badgeReal;
             }
 
             const tsunamiBadge = document.getElementById('c-tsunami-badge');
             const numMag = parseFloat(target.data.mag.replace(/[^0-9.]/g, ''));
             if (target.data.isOceanic && numMag >= 7.0 && target.data.depth < 70) {
                 tsunamiBadge.style.display = 'inline-block';
+                tsunamiBadge.innerText = lang.badgeTsunami;
             } else {
                 tsunamiBadge.style.display = 'none';
             }
@@ -840,25 +894,22 @@
             document.getElementById('c-title').innerText = target.data.location;
             document.getElementById('c-date').innerText = target.data.date;
             document.getElementById('c-mag').innerText = target.data.mag;
-            document.getElementById('c-depth').innerText = `深度 ${target.data.depth} km`;
+            document.getElementById('c-depth').innerText = `${lang.depthLabel} ${target.data.depth} km`;
             document.getElementById('c-desc').innerText = target.data.desc;
 
             dialogCard.style.display = 'block';
             dialogCard.style.opacity = '1';
 
-            // 繪製剖面圖
             drawCrossSection(target.data);
         }
 
         function setupUIEventListeners() {
-            // 時序滑桿
             const slider = document.getElementById('timeline-slider');
             slider.oninput = (e) => {
                 stopTimelinePlay();
                 filterEventsByTimeline(parseInt(e.target.value));
             };
 
-            // 自動回放按鈕
             const playBtn = document.getElementById('btn-timeline-play');
             playBtn.onclick = () => {
                 if (isTimelinePlaying) {
@@ -868,7 +919,6 @@
                 }
             };
 
-            // 模式切換按鈕
             document.getElementById('btn-toggle-nebula').onclick = function() {
                 showNebula = !showNebula;
                 this.classList.toggle('active', showNebula);
@@ -890,7 +940,6 @@
                 }
             };
 
-            // 預設開啟剖面儀
             document.getElementById('cross-section-panel').style.display = 'block';
         }
 
@@ -951,7 +1000,6 @@
             globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.04;
             globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.04;
 
-            // 地震中空環擴張
             markerObjects.forEach(m => {
                 m.scale1 += 0.01;
                 if (m.scale1 > 3.8) m.scale1 = 1.0;
@@ -964,7 +1012,6 @@
                 m.ring2.material.opacity = Math.max(0, (3.8 - m.scale2) / 2.8);
             });
 
-            // 海嘯波前擴散模擬動畫 (Tsunami Wave Propagation)
             if (showTsunami) {
                 tsunamiWaveRings.forEach(tw => {
                     tw.scale += tw.speed;
@@ -974,7 +1021,6 @@
                 });
             }
 
-            // 多光譜星雲粒子擾動
             if (showNebula && nebulaPointsMesh && nebulaPositions) {
                 for (let i = 0; i < nebulaCount; i++) {
                     const i3 = i * 3;
@@ -994,7 +1040,7 @@
             updateDialogPosition();
             renderer.render(scene, camera);
         }
-// 常用時區預設經緯度對照表
+
         const timezoneCoordsMap = {
             "Asia/Taipei": { lat: 23.69, lng: 120.96 },
             "Asia/Tokyo": { lat: 35.68, lng: 139.76 },
@@ -1005,7 +1051,6 @@
             "Australia/Sydney": { lat: -33.86, lng: 151.20 }
         };
 
-        // 自動定位並旋轉地球視角
         function autoLocateUserTimezone() {
             const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             let targetLat = 23.69;
@@ -1018,12 +1063,8 @@
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        focusOnCoordinates(pos.coords.latitude, pos.coords.longitude);
-                    },
-                    () => {
-                        focusOnCoordinates(targetLat, targetLng);
-                    },
+                    (pos) => { focusOnCoordinates(pos.coords.latitude, pos.coords.longitude); },
+                    () => { focusOnCoordinates(targetLat, targetLng); },
                     { timeout: 3000 }
                 );
             } else {
@@ -1031,7 +1072,6 @@
             }
         }
 
-        // 平滑轉向指定經緯度並捲動按鈕
         function focusOnCoordinates(lat, lng) {
             targetRotationY = -lng * (Math.PI / 180) - (Math.PI / 2);
             targetRotationX = lat * (Math.PI / 180);
@@ -1055,6 +1095,7 @@
                 }
             }, 800);
         }
+
         init();
     </script>
 </body>
