@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全球板塊構造應力場與即時地震監測 (多光譜粒子星雲版)</title>
+    <title>全球板塊構造動力學與海嘯擴散多功能監測平台</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -11,13 +11,15 @@
             color: #f3f4f6; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             overflow: hidden; 
+            user-select: none;
         }
         #webgl-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
+        /* 頂部資訊列 */
         .header {
             position: absolute;
-            top: 24px;
-            left: 28px;
+            top: 20px;
+            left: 24px;
             z-index: 10;
             pointer-events: none;
         }
@@ -33,7 +35,7 @@
             color: #94a3b8;
             margin-top: 4px;
         }
-        .sync-status {
+        .sync-badge {
             display: inline-block;
             margin-top: 6px;
             font-size: 11px;
@@ -44,38 +46,83 @@
             border: 1px solid rgba(34, 197, 94, 0.3);
         }
 
-        .legend-panel {
+        /* 視圖切換按鈕組 */
+        .view-controls {
             position: absolute;
-            top: 24px;
-            right: 28px;
+            top: 20px;
+            right: 24px;
             z-index: 10;
-            background: rgba(15, 23, 42, 0.88);
+            display: flex;
+            gap: 8px;
+        }
+        .btn-mode {
+            background: rgba(15, 23, 42, 0.85);
+            color: #cbd5e1;
             border: 1px solid rgba(56, 189, 248, 0.3);
             backdrop-filter: blur(8px);
-            border-radius: 10px;
-            padding: 12px 16px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .legend-item:last-child { margin-bottom: 0; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .dot.real { border: 1.5px solid #ef4444; background: transparent; }
-        .dot.predict { border: 1.5px solid #eab308; background: transparent; }
-        .dot.nebula { background: linear-gradient(135deg, #ec4899, #06b6d4); box-shadow: 0 0 8px #06b6d4; }
+        .btn-mode.active, .btn-mode:hover {
+            background: #0284c7;
+            color: #fff;
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
 
+        /* 斷層剖面視窗 HUD */
+        #cross-section-panel {
+            position: absolute;
+            top: 70px;
+            right: 24px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            padding: 14px 16px;
+            width: 340px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            display: none;
+        }
+        .hud-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        #section-canvas {
+            width: 100%;
+            height: 150px;
+            background: #090d16;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .section-note {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        /* 浮動資訊對話框 */
         #dialog-card {
             position: absolute;
             z-index: 20;
-            background: rgba(15, 23, 42, 0.92);
+            background: rgba(15, 23, 42, 0.94);
             border: 1px solid rgba(56, 189, 248, 0.5);
             backdrop-filter: blur(10px);
             border-radius: 12px;
-            padding: 16px 20px;
-            width: 320px;
+            padding: 14px 18px;
+            width: 310px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
             display: none;
             pointer-events: none;
-            transition: opacity 0.3s ease;
         }
         .badge-type {
             font-size: 10px;
@@ -87,40 +134,89 @@
         }
         .badge-type.real { background: #ef4444; color: #fff; }
         .badge-type.predict { background: #eab308; color: #0f172a; }
-
-        .card-title { font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 6px; }
-        .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .badge-type.tsunami { background: #06b6d4; color: #fff; margin-left: 4px; }
+        .card-title { font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 4px; }
+        .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
         .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
 
-        .timeline-bar {
+        /* 底部時序回放滑桿與控制條 */
+        .timeline-container {
             position: absolute;
             bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(8px);
-            border-radius: 40px;
-            padding: 8px 16px;
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 12px 20px;
+            width: min(850px, 92vw);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .timeline-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        .timeline-slider-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            max-width: 90vw;
+            gap: 12px;
+        }
+        .slider-play-btn {
+            background: #0284c7;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+        .timeline-slider {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+            cursor: pointer;
+        }
+        .events-btn-scroll {
+            display: flex;
+            gap: 8px;
             overflow-x: auto;
+            padding-bottom: 2px;
         }
         .btn-step {
             background: #1e293b;
             color: #f8fafc;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 6px 14px;
-            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 4px 10px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10.5px;
             white-space: nowrap;
             transition: all 0.2s;
         }
-        .btn-step:hover { background: #38bdf8; color: #0f172a; font-weight: bold; }
+        .btn-step:hover { background: #38bdf8; color: #0f172a; }
         .btn-step.active { background: #f97316; border-color: #f97316; color: #fff; font-weight: bold; }
         .btn-step.predict-btn { border-color: #eab308; color: #eab308; }
         .btn-step.predict-btn.active { background: #eab308; color: #0f172a; }
@@ -129,19 +225,32 @@
 <body>
 
     <div class="header">
-        <h1>全球板塊構造應力場與即時地震監測</h1>
-        <p>多光譜 GPU 點雲星雲粒場 · 科技幾何外骨骼 · 鏤空波紋與芮氏數值</p>
-        <div class="sync-status" id="sync-status">USGS 即時資料載入中...</div>
+        <h1>全球板塊構造動力學與海嘯擴散平台</h1>
+        <p>多維時序回放 · 海嘯波前傳播模擬 · 即時斷層俯衝剖面圖</p>
+        <div class="sync-badge" id="sync-status">USGS API 連線同步中...</div>
     </div>
 
-    <div class="legend-panel">
-        <div class="legend-item"><div class="dot real"></div><span>實際發生地震 (中空波紋 + 數值)</span></div>
-        <div class="legend-item"><div class="dot predict"></div><span>科學預測高風險區 (評估數值)</span></div>
-        <div class="legend-item"><div class="dot nebula"></div><span>多光譜應力微粒雲 (GPU Points)</span></div>
+    <!-- 視圖切換選單 -->
+    <div class="view-controls">
+        <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
+        <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前模擬</button>
+        <button class="btn-mode active" id="btn-toggle-section">斷層剖面儀</button>
     </div>
 
+    <!-- 斷層剖面 HUD -->
+    <div id="cross-section-panel">
+        <div class="hud-title">
+            <span>斷層幾何與震源剖面分析</span>
+            <span id="hud-subduction-angle">俯衝傾角: 28°</span>
+        </div>
+        <canvas id="section-canvas" width="308" height="150"></canvas>
+        <div class="section-note" id="hud-section-note">點選任一地震事件，將即時演算板塊界面應力、莫氏不連續面與震源破裂機制。</div>
+    </div>
+
+    <!-- 浮動資訊卡片 -->
     <div id="dialog-card">
         <span class="badge-type real" id="c-badge">實際發生</span>
+        <span class="badge-type tsunami" id="c-tsunami-badge" style="display:none;">海嘯風險</span>
         <div class="card-title" id="c-title">載入中...</div>
         <div class="card-meta">
             <span id="c-date">--</span>
@@ -151,8 +260,17 @@
         <div class="card-desc" id="c-desc">--</div>
     </div>
 
-    <div class="timeline-bar" id="timeline-controls">
-        <button class="btn-step" id="btn-auto">自動導覽</button>
+    <!-- 底部時序回放控制台 -->
+    <div class="timeline-container">
+        <div class="timeline-top-row">
+            <span style="color:#94a3b8;">📅 時序回放範圍：<b id="lbl-timeline-date" style="color:#38bdf8;">全部時間</b></span>
+            <span style="color:#94a3b8;">顯示中事件：<b id="lbl-event-count" style="color:#f97316;">--</b> 筆</span>
+        </div>
+        <div class="timeline-slider-row">
+            <button class="slider-play-btn" id="btn-timeline-play">▶</button>
+            <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="100" value="100">
+        </div>
+        <div class="events-btn-scroll" id="events-btn-container"></div>
     </div>
 
     <div id="webgl-container"></div>
@@ -163,70 +281,90 @@
     <script>
         const API_POLL_INTERVAL = 300000;
 
+        // 核心資料庫 (包含時間戳記以供時序滑桿精確過濾)
         let allEarthquakeData = [
             {
                 id: "p1", type: "predict",
+                timestamp: new Date("2026-09-01").getTime(),
                 date: "預測視窗：2026 Q3-Q4",
                 location: "台灣東部外海 (琉球海溝段)",
                 lat: 23.8, lng: 122.5,
-                mag: "M 7.2", depth: "15-30 km",
-                desc: "菲律賓海板塊持續朝西北向隱沒擠壓歐亞板塊，應力累積鎖定顯著。"
+                mag: "M 7.2", depth: 22,
+                dipAngle: 26, isOceanic: true,
+                desc: "菲律賓海板塊向西北隱沒至歐亞板塊下方，滑動赤字累積達 8.0 cm/yr。"
             },
             {
                 id: "p2", type: "predict",
+                timestamp: new Date("2026-10-15").getTime(),
                 date: "預測視窗：2026 下半年",
                 location: "南美洲 中段隱沒帶 (祕魯/智利交界)",
                 lat: -18.5, lng: -70.3,
-                mag: "M 7.5", depth: "35 km",
-                desc: "納斯卡板塊東向隱沒擠壓南美板塊，歷史破裂週期窗口逼近。"
+                mag: "M 7.5", depth: 35,
+                dipAngle: 22, isOceanic: true,
+                desc: "納斯卡板塊東向低角度俯衝南美陸塊，特大逆衝破裂長週期窗口逼近。"
             },
             {
                 id: "r1", type: "real",
+                timestamp: new Date("2026-08-14").getTime(),
                 date: "2026/08/14",
                 location: "印尼 弗洛勒斯海",
                 lat: -7.60, lng: 121.90,
-                mag: "M 7.7", depth: "10 km",
-                desc: "弗洛勒斯逆衝帶淺層破裂，澳洲板塊朝巽他板塊隱沒前緣擠壓。"
+                mag: "M 7.7", depth: 10,
+                dipAngle: 32, isOceanic: true,
+                desc: "弗洛勒斯後弧逆衝帶淺層極強破裂，引發顯著局部海嘯波擴散。"
             },
             {
                 id: "r2", type: "real",
+                timestamp: new Date("2026-08-10").getTime(),
                 date: "2026/08/10",
                 location: "哥倫比亞 喬科省",
                 lat: 4.90, lng: -76.60,
-                mag: "M 7.4", depth: "110 km",
-                desc: "納斯卡板塊俯衝至南美板塊下方的中深層板塊拉張撕裂。"
+                mag: "M 7.4", depth: 110,
+                dipAngle: 45, isOceanic: false,
+                desc: "納斯卡板塊俯衝深部地函內部的拉張撕裂，地表無海嘯威脅。"
             },
             {
                 id: "r3", type: "real",
+                timestamp: new Date("2026-06-07").getTime(),
                 date: "2026/06/07",
                 location: "菲律賓 棉蘭老島西南外海",
                 lat: 5.92, lng: 124.95,
-                mag: "M 7.8", depth: "57 km",
-                desc: "哥塔巴托海溝隱沒帶與菲律賓移動帶板塊交界面強烈擠壓。"
+                mag: "M 7.8", depth: 57,
+                dipAngle: 38, isOceanic: true,
+                desc: "哥塔巴托海溝板塊交界面逆衝破裂，具備中等海嘯波前傳播特性。"
             }
         ];
 
         // 應力星雲斷層聚集中心點
         const stressNebulaCenters = [
-            { lat: 35.0, lng: 140.0, count: 400, radiusDeg: 7.0 }, // 日本海溝
-            { lat: 23.5, lng: 122.0, count: 350, radiusDeg: 5.5 }, // 台灣-琉球
-            { lat: -8.0, lng: 115.0, count: 400, radiusDeg: 8.0 }, // 印尼爪哇
-            { lat: -20.0, lng: -72.0, count: 350, radiusDeg: 7.0 }, // 南美智利
-            { lat: 15.0, lng: -95.0, count: 300, radiusDeg: 6.0 },  // 中美洲海溝
-            { lat: -58.0, lng: -45.0, count: 250, radiusDeg: 7.0 }  // 斯科舍海/南極
+            { lat: 35.0, lng: 140.0, count: 350, radiusDeg: 7.0 },
+            { lat: 23.5, lng: 122.0, count: 300, radiusDeg: 5.5 },
+            { lat: -8.0, lng: 115.0, count: 350, radiusDeg: 8.0 },
+            { lat: -20.0, lng: -72.0, count: 300, radiusDeg: 7.0 },
+            { lat: 15.0, lng: -95.0, count: 250, radiusDeg: 6.0 },
+            { lat: -58.0, lng: -45.0, count: 200, radiusDeg: 7.0 }
         ];
 
         const RADIUS = 100;
         let scene, camera, renderer, controls, globeGroup;
         let markerObjects = [];
+        let tsunamiWaveRings = []; // 海嘯波前模擬網格陣列
         let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
+        let wireframeMesh;
         let currentIndex = 0;
-        let isAutoPlaying = false;
-        let autoPlayTimer = null;
         let globalClock = 0;
+
+        // 功能開關狀態
+        let showNebula = true;
+        let showTsunami = true;
+        let showSection = true;
+        let isTimelinePlaying = false;
+        let timelineTimer = null;
 
         const container = document.getElementById('webgl-container');
         const dialogCard = document.getElementById('dialog-card');
+        const sectionCanvas = document.getElementById('section-canvas');
+        const sCtx = sectionCanvas.getContext('2d');
 
         function latLngToVector3(lat, lng, radius) {
             const phi = (90 - lat) * (Math.PI / 180);
@@ -238,17 +376,16 @@
             );
         }
 
-        // 產生柔和邊緣的發光圓點粒子紋理
         function createGlowPointTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
-            gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.2)');
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            ctx.fillStyle = gradient;
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.2)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 64, 64);
             return new THREE.CanvasTexture(canvas);
         }
@@ -257,7 +394,6 @@
             const canvas = document.createElement('canvas');
             canvas.width = 128; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            
             ctx.fillStyle = isPredict ? 'rgba(234, 179, 8, 0.95)' : 'rgba(239, 68, 68, 0.95)';
             ctx.font = 'bold 22px -apple-system, sans-serif';
             ctx.textAlign = 'center';
@@ -284,15 +420,15 @@
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true; 
+            controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 120; 
+            controls.minDistance = 120;
             controls.maxDistance = 500;
 
             globeGroup = new THREE.Group();
             scene.add(globeGroup);
 
-            // 地球本體材質
+            // 地球紋理與地貌
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             const bumpTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
@@ -308,17 +444,13 @@
             const earthMesh = new THREE.Mesh(earthGeo, earthMat);
             globeGroup.add(earthMesh);
 
-            // 幾何外骨骼科技線網 (圖片中的科技幾何外框)
+            // 外骨骼幾何線網
             const wireframeGeo = new THREE.IcosahedronGeometry(RADIUS * 1.04, 3);
-            const wireframeMat = new THREE.MeshBasicMaterial({
-                color: 0x334155,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.18
-            });
-            globeGroup.add(new THREE.Mesh(wireframeGeo, wireframeMat));
+            const wireframeMat = new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.16 });
+            wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
+            globeGroup.add(wireframeMesh);
 
-            // 大氣光暈
+            // 大氣層光暈
             const atmosphereGeo = new THREE.SphereGeometry(RADIUS * 1.015, 64, 64);
             const atmosphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.12, side: THREE.BackSide });
             globeGroup.add(new THREE.Mesh(atmosphereGeo, atmosphereMat));
@@ -329,12 +461,16 @@
             scene.add(dirLight);
 
             loadTectonicPlates();
-            buildSpectralNebulaPointCloud(); // 建立多光譜星雲粒子
+            buildSpectralNebulaPointCloud();
 
+            // 抓取即時資料並綁定 UI 事件
             await refreshUSGSData();
             setInterval(refreshUSGSData, API_POLL_INTERVAL);
 
+            setupUIEventListeners();
             window.addEventListener('resize', onWindowResize);
+            
+            filterEventsByTimeline(100);
             focusEvent(0);
             animate();
         }
@@ -355,10 +491,9 @@
                         globeGroup.add(line);
                     });
                 })
-                .catch(err => console.log('Plate fallback:', err));
+                .catch(err => console.log('Plate data error:', err));
         }
 
-        // 建立 GPU 多光譜彩色星雲點雲 (還原圖片的多色粒子團)
         function buildSpectralNebulaPointCloud() {
             let total = 0;
             stressNebulaCenters.forEach(c => total += c.count);
@@ -368,20 +503,18 @@
             const basePositions = new Float32Array(total * 3);
             const colors = new Float32Array(total * 3);
 
-            // 多光譜色系池：亮紫、深紅、粉橙、碧綠、亮青、藍白
             const palette = [
-                new THREE.Color('#c084fc'), // 紫
-                new THREE.Color('#f43f5e'), // 洋紅
-                new THREE.Color('#fb923c'), // 橙
-                new THREE.Color('#2dd4bf'), // 碧綠
-                new THREE.Color('#38bdf8'), // 亮青
-                new THREE.Color('#e0e7ff')  // 亮白
+                new THREE.Color('#c084fc'),
+                new THREE.Color('#f43f5e'),
+                new THREE.Color('#fb923c'),
+                new THREE.Color('#2dd4bf'),
+                new THREE.Color('#38bdf8'),
+                new THREE.Color('#e0e7ff')
             ];
 
             let pIdx = 0;
             stressNebulaCenters.forEach(center => {
                 for (let i = 0; i < center.count; i++) {
-                    // 高斯常態分佈散佈經緯度
                     const u = Math.random();
                     const v = Math.random();
                     const r = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
@@ -401,7 +534,6 @@
                     basePositions[pIdx * 3 + 1] = pos.y;
                     basePositions[pIdx * 3 + 2] = pos.z;
 
-                    // 依徑向距離混合多光譜色調
                     const col = palette[Math.floor(Math.random() * palette.length)].clone();
                     colors[pIdx * 3] = col.r;
                     colors[pIdx * 3 + 1] = col.g;
@@ -416,7 +548,7 @@
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
             const material = new THREE.PointsMaterial({
-                size: 1.6,
+                size: 1.5,
                 vertexColors: true,
                 map: createGlowPointTexture(),
                 blending: THREE.AdditiveBlending,
@@ -446,49 +578,76 @@
 
                     if (mag >= 5.6 || (lat < -45 && mag >= 5.0)) {
                         const place = eq.properties.place;
-                        const timeStr = new Date(eq.properties.time).toISOString().split('T')[0];
+                        const time = eq.properties.time;
+                        const timeStr = new Date(time).toISOString().split('T')[0];
                         
                         allEarthquakeData.push({
                             id: "usgs_" + eq.id,
                             type: "real",
+                            timestamp: time,
                             date: timeStr + " (USGS即時)",
                             location: place,
                             lat: lat,
                             lng: lng,
                             mag: "M " + mag.toFixed(1),
-                            depth: depth.toFixed(0) + " km",
-                            desc: `USGS 自動回報。震央座標 [${lat.toFixed(2)}, ${lng.toFixed(2)}]。`
+                            depth: Math.round(depth),
+                            dipAngle: Math.floor(20 + Math.random() * 25),
+                            isOceanic: Math.abs(lat) < 55 && depth < 60,
+                            desc: `USGS 自動回報。震央座標 [${lat.toFixed(2)}, ${lng.toFixed(2)}]，深度 ${depth} km。`
                         });
                     }
                 });
 
+                // 依照時間排序
+                allEarthquakeData.sort((a, b) => a.timestamp - b.timestamp);
+
                 document.getElementById('sync-status').innerText = `已同步 USGS 即時數據 (共 ${allEarthquakeData.length} 筆)`;
-                rebuildMarkersAndControls();
+                filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
             } catch (e) {
                 console.log("USGS API Fallback", e);
                 document.getElementById('sync-status').innerText = 'USGS 連線逾時，使用快取數據';
             }
         }
 
-        function rebuildMarkersAndControls() {
+        // 依據時間軸滑桿篩選事件
+        function filterEventsByTimeline(percentage) {
+            if (allEarthquakeData.length === 0) return;
+            const minTime = allEarthquakeData[0].timestamp;
+            const maxTime = allEarthquakeData[allEarthquakeData.length - 1].timestamp;
+            const cutoffTime = minTime + (maxTime - minTime) * (percentage / 100);
+
+            const activeEvents = allEarthquakeData.filter(e => e.timestamp <= cutoffTime);
+
+            document.getElementById('lbl-event-count').innerText = activeEvents.length;
+            document.getElementById('lbl-timeline-date').innerText = percentage >= 100 ? "全部事件" : new Date(cutoffTime).toISOString().split('T')[0];
+
+            rebuildMarkersAndControls(activeEvents);
+        }
+
+        function rebuildMarkersAndControls(activeEvents) {
+            // 清除舊物件
             markerObjects.forEach(m => {
                 globeGroup.remove(m.dot);
                 globeGroup.remove(m.ring1);
                 globeGroup.remove(m.ring2);
                 globeGroup.remove(m.sprite);
             });
+            tsunamiWaveRings.forEach(tw => globeGroup.remove(tw.mesh));
             markerObjects = [];
+            tsunamiWaveRings = [];
 
-            allEarthquakeData.forEach((eq) => {
+            activeEvents.forEach((eq) => {
                 const pos = latLngToVector3(eq.lat, eq.lng, RADIUS + 0.8);
                 const isPredict = eq.type === 'predict';
                 const color = isPredict ? 0xeab308 : 0xef4444;
 
+                // 核心圓點
                 const dotGeo = new THREE.SphereGeometry(0.7, 12, 12);
                 const dotMat = new THREE.MeshBasicMaterial({ color: color });
                 const dotMesh = new THREE.Mesh(dotGeo, dotMat);
                 dotMesh.position.copy(pos);
 
+                // 鏤空中空波紋環
                 const ringGeo = new THREE.RingGeometry(1.2, 1.45, 32);
                 const ringMat1 = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
                 const ringMesh1 = new THREE.Mesh(ringGeo, ringMat1);
@@ -500,6 +659,7 @@
                 ringMesh2.position.copy(pos);
                 ringMesh2.lookAt(new THREE.Vector3(0, 0, 0));
 
+                // 數值 Sprite
                 const sprite = createTextSprite(eq.mag, isPredict);
                 const textPos = latLngToVector3(eq.lat, eq.lng, RADIUS + 4.2);
                 sprite.position.copy(textPos);
@@ -508,6 +668,27 @@
                 globeGroup.add(ringMesh1);
                 globeGroup.add(ringMesh2);
                 globeGroup.add(sprite);
+
+                // 若為海域淺層強震 (M >= 7.0 且 depth < 70km)，建立海嘯波傳播擴散圈
+                const numMag = parseFloat(eq.mag.replace(/[^0-9.]/g, ''));
+                if (eq.isOceanic && numMag >= 7.0 && eq.depth < 70) {
+                    for (let w = 0; w < 3; w++) {
+                        const tGeo = new THREE.RingGeometry(2.0, 2.5, 48);
+                        const tMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+                        const tMesh = new THREE.Mesh(tGeo, tMat);
+                        tMesh.position.copy(pos);
+                        tMesh.lookAt(new THREE.Vector3(0, 0, 0));
+                        tMesh.visible = showTsunami;
+                        globeGroup.add(tMesh);
+
+                        tsunamiWaveRings.push({
+                            mesh: tMesh,
+                            scale: 1.0 + w * 3.5,
+                            speed: 0.025,
+                            maxScale: 14.0
+                        });
+                    }
+                }
 
                 markerObjects.push({
                     dot: dotMesh,
@@ -521,23 +702,110 @@
                 });
             });
 
-            const bar = document.getElementById('timeline-controls');
-            bar.innerHTML = '<button class="btn-step" id="btn-auto">自動導覽</button>';
-            const autoBtn = document.getElementById('btn-auto');
-
-            allEarthquakeData.forEach((eq, idx) => {
+            // 重新生成底部快捷按鈕
+            const bar = document.getElementById('events-btn-container');
+            bar.innerHTML = '';
+            activeEvents.forEach((eq, idx) => {
                 const btn = document.createElement('button');
                 btn.className = `btn-step ${eq.type === 'predict' ? 'predict-btn' : ''}`;
                 btn.id = `btn-step-${idx}`;
                 const shortName = eq.location.split(',')[0].split(' of ')[1] || eq.location.split(' ')[0];
                 btn.innerText = `${idx + 1}. ${eq.type === 'predict' ? '[預測]' : ''}${shortName}`;
-                btn.onclick = () => { stopAutoPlay(); focusEvent(idx); };
-                bar.insertBefore(btn, autoBtn);
+                btn.onclick = () => { focusEvent(idx); };
+                bar.appendChild(btn);
             });
+        }
 
-            autoBtn.onclick = () => {
-                if (isAutoPlaying) { stopAutoPlay(); } else { startAutoPlay(); }
-            };
+        // 繪製自訂斷層地質剖面圖
+        function drawCrossSection(data) {
+            if (!showSection) return;
+            const w = sectionCanvas.width;
+            const h = sectionCanvas.height;
+            sCtx.clearRect(0, 0, w, h);
+
+            // 背景地層漸層
+            const bgGrad = sCtx.createLinearGradient(0, 0, 0, h);
+            bgGrad.addColorStop(0, "#0c1527");
+            bgGrad.addColorStop(0.5, "#172554");
+            bgGrad.addColorStop(1, "#020617");
+            sCtx.fillStyle = bgGrad;
+            sCtx.fillRect(0, 0, w, h);
+
+            // 海洋層 (若為海域)
+            if (data.isOceanic) {
+                sCtx.fillStyle = "rgba(6, 182, 212, 0.35)";
+                sCtx.fillRect(0, 0, w * 0.55, 14);
+                sCtx.fillStyle = "#38bdf8";
+                sCtx.font = "9px sans-serif";
+                sCtx.fillText("海洋層 (Sea)", 10, 10);
+            }
+
+            const dip = (data.dipAngle || 30) * (Math.PI / 180);
+
+            // 1. 隱沒板塊 (下插大洋岩石圈)
+            sCtx.beginPath();
+            sCtx.moveTo(0, 15);
+            sCtx.lineTo(w * 0.45, 15);
+            sCtx.lineTo(w * 0.9, h - 10);
+            sCtx.lineTo(w * 0.8, h);
+            sCtx.lineTo(w * 0.35, 35);
+            sCtx.lineTo(0, 35);
+            sCtx.closePath();
+            sCtx.fillStyle = "rgba(56, 189, 248, 0.25)";
+            sCtx.fill();
+            sCtx.strokeStyle = "#38bdf8";
+            sCtx.lineWidth = 1.5;
+            sCtx.stroke();
+
+            // 2. 上盤陸塊/島弧
+            sCtx.beginPath();
+            sCtx.moveTo(w * 0.48, 15);
+            sCtx.lineTo(w, 15);
+            sCtx.lineTo(w, h - 20);
+            sCtx.lineTo(w * 0.92, h - 10);
+            sCtx.closePath();
+            sCtx.fillStyle = "rgba(249, 115, 22, 0.18)";
+            sCtx.fill();
+            sCtx.strokeStyle = "#f97316";
+            sCtx.lineWidth = 1.5;
+            sCtx.stroke();
+
+            // 3. 莫氏不連續面 (Moho 虛線)
+            sCtx.setLineDash([4, 4]);
+            sCtx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+            sCtx.beginPath();
+            sCtx.moveTo(w * 0.5, 40);
+            sCtx.lineTo(w, 40);
+            sCtx.stroke();
+            sCtx.setLineDash([]);
+
+            sCtx.fillStyle = "#94a3b8";
+            sCtx.font = "9px sans-serif";
+            sCtx.fillText("莫氏不連續面 (Moho)", w - 95, 36);
+
+            // 4. 震源破裂點標註 (Focus / Hypocenter)
+            const focusX = w * 0.45 + (data.depth / 150) * (w * 0.35);
+            const focusY = 15 + Math.sin(dip) * (data.depth * 0.8);
+
+            sCtx.fillStyle = data.type === 'predict' ? "#eab308" : "#ef4444";
+            sCtx.beginPath();
+            sCtx.arc(focusX, Math.min(focusY, h - 25), 5, 0, Math.PI * 2);
+            sCtx.fill();
+
+            // 震源向外微震波
+            sCtx.strokeStyle = data.type === 'predict' ? "rgba(234, 179, 8, 0.8)" : "rgba(239, 68, 68, 0.8)";
+            sCtx.beginPath();
+            sCtx.arc(focusX, Math.min(focusY, h - 25), 10, 0, Math.PI * 2);
+            sCtx.stroke();
+
+            sCtx.fillStyle = "#fff";
+            sCtx.font = "bold 10px sans-serif";
+            sCtx.fillText(`★ 震源深: ${data.depth} km`, focusX - 30, Math.min(focusY, h - 25) - 12);
+
+            // 更新 HUD 文字
+            document.getElementById('hud-subduction-angle').innerText = `隱沒傾角: ${data.dipAngle || 28}°`;
+            document.getElementById('hud-section-note').innerText = 
+                `${data.location}：深度 ${data.depth} km。${data.isOceanic ? '海溝型板塊界面逆衝' : '陸內/深部變形'}破裂。`;
         }
 
         function focusEvent(index) {
@@ -561,36 +829,97 @@
                 badge.innerText = '實際發生地震';
             }
 
+            const tsunamiBadge = document.getElementById('c-tsunami-badge');
+            const numMag = parseFloat(target.data.mag.replace(/[^0-9.]/g, ''));
+            if (target.data.isOceanic && numMag >= 7.0 && target.data.depth < 70) {
+                tsunamiBadge.style.display = 'inline-block';
+            } else {
+                tsunamiBadge.style.display = 'none';
+            }
+
             document.getElementById('c-title').innerText = target.data.location;
             document.getElementById('c-date').innerText = target.data.date;
             document.getElementById('c-mag').innerText = target.data.mag;
-            document.getElementById('c-depth').innerText = `深度 ${target.data.depth}`;
+            document.getElementById('c-depth').innerText = `深度 ${target.data.depth} km`;
             document.getElementById('c-desc').innerText = target.data.desc;
 
             dialogCard.style.display = 'block';
             dialogCard.style.opacity = '1';
+
+            // 繪製剖面圖
+            drawCrossSection(target.data);
+        }
+
+        function setupUIEventListeners() {
+            // 時序滑桿
+            const slider = document.getElementById('timeline-slider');
+            slider.oninput = (e) => {
+                stopTimelinePlay();
+                filterEventsByTimeline(parseInt(e.target.value));
+            };
+
+            // 自動回放按鈕
+            const playBtn = document.getElementById('btn-timeline-play');
+            playBtn.onclick = () => {
+                if (isTimelinePlaying) {
+                    stopTimelinePlay();
+                } else {
+                    startTimelinePlay();
+                }
+            };
+
+            // 模式切換按鈕
+            document.getElementById('btn-toggle-nebula').onclick = function() {
+                showNebula = !showNebula;
+                this.classList.toggle('active', showNebula);
+                if (nebulaPointsMesh) nebulaPointsMesh.visible = showNebula;
+            };
+
+            document.getElementById('btn-toggle-tsunami').onclick = function() {
+                showTsunami = !showTsunami;
+                this.classList.toggle('active', showTsunami);
+                tsunamiWaveRings.forEach(tw => tw.mesh.visible = showTsunami);
+            };
+
+            document.getElementById('btn-toggle-section').onclick = function() {
+                showSection = !showSection;
+                this.classList.toggle('active', showSection);
+                document.getElementById('cross-section-panel').style.display = showSection ? 'block' : 'none';
+                if (showSection && markerObjects[currentIndex]) {
+                    drawCrossSection(markerObjects[currentIndex].data);
+                }
+            };
+
+            // 預設開啟剖面儀
+            document.getElementById('cross-section-panel').style.display = 'block';
+        }
+
+        function startTimelinePlay() {
+            isTimelinePlaying = true;
+            document.getElementById('btn-timeline-play').innerText = '❚❚';
+            const slider = document.getElementById('timeline-slider');
+            
+            if (parseInt(slider.value) >= 100) slider.value = 0;
+
+            timelineTimer = setInterval(() => {
+                let val = parseInt(slider.value) + 1;
+                if (val > 100) {
+                    stopTimelinePlay();
+                } else {
+                    slider.value = val;
+                    filterEventsByTimeline(val);
+                }
+            }, 120);
+        }
+
+        function stopTimelinePlay() {
+            isTimelinePlaying = false;
+            document.getElementById('btn-timeline-play').innerText = '▶';
+            clearInterval(timelineTimer);
         }
 
         let targetRotationY = 0;
         let targetRotationX = 0;
-
-        function startAutoPlay() {
-            isAutoPlaying = true;
-            document.getElementById('btn-auto').innerText = '暫停導覽';
-            document.getElementById('btn-auto').classList.add('active');
-            clearInterval(autoPlayTimer);
-            autoPlayTimer = setInterval(() => {
-                currentIndex = (currentIndex + 1) % allEarthquakeData.length;
-                focusEvent(currentIndex);
-            }, 5000);
-        }
-
-        function stopAutoPlay() {
-            isAutoPlaying = false;
-            document.getElementById('btn-auto').innerText = '自動導覽';
-            document.getElementById('btn-auto').classList.remove('active');
-            clearInterval(autoPlayTimer);
-        }
 
         function updateDialogPosition() {
             if (markerObjects.length === 0 || !markerObjects[currentIndex]) return;
@@ -602,8 +931,8 @@
 
             if (screenPos.z < 0.98) {
                 dialogCard.style.display = 'block';
-                dialogCard.style.left = `${x - 160}px`;
-                dialogCard.style.top = `${y - 180}px`;
+                dialogCard.style.left = `${x - 155}px`;
+                dialogCard.style.top = `${y - 175}px`;
             } else {
                 dialogCard.style.display = 'none';
             }
@@ -622,7 +951,7 @@
             globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.04;
             globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.04;
 
-            // 地震中空環擴張 (速度降低 50%：0.01)
+            // 地震中空環擴張
             markerObjects.forEach(m => {
                 m.scale1 += 0.01;
                 if (m.scale1 > 3.8) m.scale1 = 1.0;
@@ -635,15 +964,24 @@
                 m.ring2.material.opacity = Math.max(0, (3.8 - m.scale2) / 2.8);
             });
 
-            // 多光譜星雲粒子呼吸膨脹與三維擾動 (動態微流動)
-            if (nebulaPointsMesh && nebulaPositions) {
+            // 海嘯波前擴散模擬動畫 (Tsunami Wave Propagation)
+            if (showTsunami) {
+                tsunamiWaveRings.forEach(tw => {
+                    tw.scale += tw.speed;
+                    if (tw.scale > tw.maxScale) tw.scale = 1.0;
+                    tw.mesh.scale.set(tw.scale, tw.scale, 1);
+                    tw.mesh.material.opacity = Math.max(0, (tw.maxScale - tw.scale) / tw.maxScale) * 0.85;
+                });
+            }
+
+            // 多光譜星雲粒子擾動
+            if (showNebula && nebulaPointsMesh && nebulaPositions) {
                 for (let i = 0; i < nebulaCount; i++) {
                     const i3 = i * 3;
                     const bx = nebulaBasePositions[i3];
                     const by = nebulaBasePositions[i3 + 1];
                     const bz = nebulaBasePositions[i3 + 2];
 
-                    // 三維正弦擾動，營造星雲呼吸與微渦流
                     const noise = Math.sin(globalClock * 1.5 + i * 0.1) * 0.4;
                     nebulaPositions[i3] = bx + (bx / RADIUS) * noise;
                     nebulaPositions[i3 + 1] = by + (by / RADIUS) * noise;
