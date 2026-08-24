@@ -44,11 +44,6 @@
             border-radius: 4px;
             border: 1px solid rgba(34, 197, 94, 0.3);
         }
-        .sync-badge.error {
-            color: #f87171;
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.35);
-        }
 
         .view-controls {
             position: absolute;
@@ -79,10 +74,10 @@
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
         }
 
-        /* HUD 與 Tabs 切換設計 */
+        /* 右側 HUD 面板主體 */
         #cross-section-panel {
             position: absolute;
-            top: 70px;
+            top: 110px; /* 向下移一點，避免擋到控制按鈕 */
             right: 24px;
             z-index: 10;
             background: rgba(15, 23, 42, 0.92);
@@ -92,35 +87,153 @@
             padding: 14px 16px;
             width: 340px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            display: none;
+            display: none; /* 初始隱藏，點選事件後顯示 */
+            max-height: 80vh; /* 避免高度超出螢幕 */
+            display: flex;
+            flex-direction: column;
         }
-        .hud-title {
+        
+        .hud-header {
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        .hud-title-row {
             font-size: 13px;
             font-weight: 700;
             color: #38bdf8;
-            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
+        
         #section-canvas {
             width: 100%;
             height: 150px;
             background: #090d16;
             border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.1);
+            margin-top: 8px;
+            flex-shrink: 0;
         }
         
-        /* Webcams 與 News 標籤頁 CSS */
-        .section-tab-container { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
-        .section-tabs { display: flex; gap: 12px; font-size: 11px; margin-bottom: 8px; }
-        .section-tab { color: #94a3b8; cursor: pointer; padding-bottom: 2px; }
-        .section-tab.active { color: #fff; border-bottom: 2px solid #38bdf8; font-weight: bold; }
-        .section-content { font-size: 11px; color: #cbd5e1; line-height: 1.4; display: none; max-height: 100px; overflow-y: auto; }
-        .section-content.active { display: block; }
-        .info-list-item { margin-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 4px; }
-        .info-link { color: #38bdf8; text-decoration: none; font-size: 11.5px; cursor: pointer; }
-        .info-link:hover { color: #fff; }
-        .info-meta { color: #94a3b8; font-size: 10px; margin-top: 2px; }
+        /* 💡 本次新增：HUD Tabs 樣式 */
+        .hud-tabs-container {
+            margin-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 10px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .hud-tabs-header {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+            flex-shrink: 0;
+        }
+
+        .hud-tab-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 11px;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .hud-tab-btn:hover {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .hud-tab-btn.active {
+            color: #fff;
+            font-weight: bold;
+            background: rgba(56, 189, 248, 0.15);
+        }
+        
+        /* 底部高亮線 */
+        .hud-tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+
+        .hud-tab-content {
+            flex-grow: 1;
+            overflow-y: auto; /* 內容過多時顯示滾動條 */
+            padding-top: 10px;
+            font-size: 11px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        
+        /* 自訂滾動條樣式 */
+        .hud-tab-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .hud-tab-content::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+        }
+        .hud-tab-content::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.3);
+            border-radius: 2px;
+        }
+        .hud-tab-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.5);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+        
+        /* 列表樣式 (用於 Webcams 和新聞) */
+        .info-list-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed rgba(255,255,255,0.08);
+        }
+        
+        .info-item-title {
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .info-item-meta {
+            color: #94a3b8;
+            font-size: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-tag {
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+        .status-online { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
+        .status-archive { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
 
         #dialog-card {
             position: absolute;
@@ -195,8 +308,6 @@
         .timeline-slider {
             flex-grow: 1;
             -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
             height: 6px;
             border-radius: 3px;
             background: #334155;
@@ -211,20 +322,6 @@
             background: #38bdf8;
             box-shadow: 0 0 8px #38bdf8;
             cursor: pointer;
-        }
-        .timeline-slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border: none;
-            border-radius: 50%;
-            background: #38bdf8;
-            box-shadow: 0 0 8px #38bdf8;
-            cursor: pointer;
-        }
-        .timeline-slider::-moz-range-track {
-            height: 6px;
-            border-radius: 3px;
-            background: #334155;
         }
         .events-btn-scroll {
             display: flex;
@@ -265,87 +362,66 @@
             animation: fadeIn 0.3s ease;
         }
         @keyframes fadeIn { from { opacity: 0; top: 60px; } to { opacity: 1; top: 70px; } }
-
-        #loading-screen {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: #020617;
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            transition: opacity 0.5s ease;
-        }
-        #loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .loading-spinner {
-            width: 42px;
-            height: 42px;
-            border: 3px solid rgba(56, 189, 248, 0.2);
-            border-top-color: #38bdf8;
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        #loading-screen p {
-            font-size: 12px;
-            color: #94a3b8;
-            letter-spacing: 1px;
-        }
     </style>
 </head>
 <body>
-
-    <div id="loading-screen">
-        <div class="loading-spinner"></div>
-        <p id="loading-text">初始化地球模型與即時資料中...</p>
-    </div>
 
     <div id="share-toast">已複製專屬分享網址到剪貼簿！</div>
 
     <div class="header">
         <h1 id="ui-title">全球板塊構造動力學與海嘯擴散平台</h1>
-        <p id="ui-subtitle">USGS+EMSC 融合 · 板塊動態流 · 月球引力場 · 區域 Webcams</p>
+        <p id="ui-subtitle">USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力應力 · 點擊特寫放大</p>
         <div class="sync-badge" id="sync-status">多元即時資料連線中...</div>
     </div>
 
     <div class="view-controls">
         <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
         <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前</button>
-        <button class="btn-mode active" id="btn-toggle-section">斷層剖面儀</button>
-        <!-- 新增的功能開關 -->
-        <button class="btn-mode active" id="btn-toggle-plates">板塊向量流</button>
-        <button class="btn-mode active" id="btn-toggle-stress">月球引力場</button>
+        <button class="btn-mode active" id="btn-toggle-section">構造剖面儀</button>
+        <button class="btn-mode active" id="btn-toggle-plates">板塊動態流</button>
+        <button class="btn-mode active" id="btn-toggle-stress">月球引力應力</button>
         <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
     </div>
 
+    <!-- 右側構造剖面面板 (HUD) -->
     <div id="cross-section-panel">
-        <div class="hud-title">
-            <span id="ui-section-title">斷層幾何與震源剖面分析</span>
-            <span id="hud-subduction-angle">俯衝傾角: 28°</span>
+        <div class="hud-header">
+            <div class="hud-title-row">
+                <span id="ui-section-title">構造幾何與震源剖面分析</span>
+                <span id="hud-subduction-angle">俯衝傾角: --</span>
+            </div>
+            <canvas id="section-canvas" width="308" height="150"></canvas>
         </div>
-        <canvas id="section-canvas" width="308" height="150"></canvas>
         
-        <!-- Webcams 與 News 標籤區域 -->
-        <div class="section-tab-container">
-            <div class="section-tabs">
-                <div class="section-tab active" data-tab="analysis">地質分析</div>
-                <div class="section-tab" data-tab="webcams">世界 Webcams</div>
-                <div class="section-tab" data-tab="news">新聞消息</div>
+        <!-- 💡 本次新增：HUD Tabs 結構 -->
+        <div class="hud-tabs-container">
+            <div class="hud-tabs-header">
+                <button class="hud-tab-btn active" data-tab="analysis">地質分析</button>
+                <button class="hud-tab-btn" data-tab="webcams">區域 Webcams</button>
+                <button class="hud-tab-btn" data-tab="news">新聞消息</button>
             </div>
-            <div class="section-content active" id="tab-analysis">
-                點選任一地震事件，將即時演算板塊界面應力、莫氏不連續面與震源破裂機制。
-            </div>
-            <div class="section-content" id="tab-webcams">
-                <!-- 動態注入 Webcam 資料 -->
-            </div>
-            <div class="section-content" id="tab-news">
-                <!-- 動態注入 News 資料 -->
+            
+            <div class="hud-tab-content">
+                <!-- 地質分析 Tab -->
+                <div class="tab-pane active" id="tab-analysis">
+                    <p id="hud-section-note">點選任一地震事件，將即時演算板塊界面應力、莫氏不連續面與震源破裂機制。</p>
+                </div>
+                
+                <!-- 區域 Webcams Tab -->
+                <div class="tab-pane" id="tab-webcams">
+                    <div id="webcam-list">
+                        <!-- 資料將由 JS 動態注入 -->
+                        <p style="color: #94a3b8; font-style: italic;">請先點選地震事件以載入附近監視器...</p>
+                    </div>
+                </div>
+                
+                <!-- 新聞消息 Tab -->
+                <div class="tab-pane" id="tab-news">
+                    <div id="news-list">
+                        <!-- 資料將由 JS 動態注入 -->
+                        <p style="color: #94a3b8; font-style: italic;">請先點選地震事件以載入相關新聞...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -386,16 +462,15 @@
         const i18nDict = {
             "zh-TW": {
                 title: "全球板塊構造動力學與海嘯擴散平台",
-                subtitle: "USGS+EMSC 融合 · 板塊動態流 · 月球引力場 · 區域 Webcams",
+                subtitle: "USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力應力 · 點擊特寫放大",
                 syncing: "多元資料庫同步中...",
                 synced: "已同步 USGS + EMSC 雙源即時數據",
-                syncError: "連線異常，暫以快取資料顯示",
                 btnNebula: "應力星雲",
                 btnTsunami: "海嘯波前",
-                btnSection: "斷層剖面儀",
+                btnSection: "構造剖面儀",
                 btnShare: "🔗 分享視角",
                 toastShare: "已複製專屬分享網址到剪貼簿！",
-                sectionTitle: "斷層幾何與震源剖面分析",
+                sectionTitle: "構造幾何與震源剖面分析",
                 timelineLabel: "📅 時序回放範圍：",
                 eventsLabel: "顯示中事件：",
                 allTime: "全部時間",
@@ -406,15 +481,13 @@
                 depthLabel: "深度",
                 shallow: "淺層 (<70km)",
                 intermediate: "中深層 (70-300km)",
-                deep: "超深層 (>300km)",
-                loading: "初始化地球模型與即時資料中..."
+                deep: "超深層 (>300km)"
             },
             "en": {
                 title: "Global Tectonic Dynamics & Real-time Monitoring",
-                subtitle: "USGS+EMSC Fusion · Tectonic Vectors · Lunar Stress · Webcams",
+                subtitle: "USGS + EMSC Multi-Source Fusion · Tectonic Vectors · Lunar Stress · Click Zoom",
                 syncing: "Syncing Multi-Source API...",
                 synced: "USGS + EMSC Multi-Source Synced",
-                syncError: "Connection issue — showing cached data",
                 btnNebula: "Stress Nebula",
                 btnTsunami: "Tsunami Sim",
                 btnSection: "Cross-Section",
@@ -431,37 +504,11 @@
                 depthLabel: "Depth",
                 shallow: "Shallow (<70km)",
                 intermediate: "Intermediate (70-300km)",
-                deep: "Deep (>300km)",
-                loading: "Initializing globe & live data..."
-            },
-            "ja": {
-                title: "全球プレートダイナミクス・リアルタイム地震監視",
-                subtitle: "USGS+EMSC 同期 · プレートベクトル · 月引力応力 · Webcams",
-                syncing: "マルチソース同期中...",
-                synced: "USGS + EMSC リアルタイム同期完了",
-                syncError: "接続エラー、キャッシュデータを表示中",
-                btnNebula: "応力星雲",
-                btnTsunami: "津波波面",
-                btnSection: "断層断面図",
-                btnShare: "🔗 視点共有",
-                toastShare: "共有リンクをコピーしました！",
-                sectionTitle: "断層構造・震源断面解析",
-                timelineLabel: "📅 再生範囲：",
-                eventsLabel: "表示イベント：",
-                allTime: "全期間",
-                badgeReal: "観測地震",
-                badgePredict: "予測エリア",
-                badgeTsunami: "津波注意",
-                predictPrefix: "[予測]",
-                depthLabel: "深さ",
-                shallow: "浅発 (<70km)",
-                intermediate: "中発 (70-300km)",
-                deep: "深発 (>300km)",
-                loading: "地球モデルとデータを初期化中..."
+                deep: "Deep (>300km)"
             }
         };
 
-        const userLang = navigator.language.startsWith('zh') ? 'zh-TW' : (navigator.language.startsWith('ja') ? 'ja' : 'en');
+        const userLang = navigator.language.startsWith('zh') ? 'zh-TW' : 'en';
         const lang = i18nDict[userLang] || i18nDict['en'];
 
         function applyLanguage() {
@@ -477,10 +524,10 @@
             document.getElementById('ui-events-label').innerText = lang.eventsLabel;
             document.getElementById('lbl-timeline-date').innerText = lang.allTime;
             document.getElementById('share-toast').innerText = lang.toastShare;
-            document.getElementById('loading-text').innerText = lang.loading;
         }
 
-        AppState.data.earthquakes = [
+        // 固定模擬資料
+        let allEarthquakeData = [
             {
                 id: "p1", type: "predict",
                 source: "Fault Model",
@@ -513,30 +560,52 @@
                 mag: "M 7.7", depth: 10,
                 dipAngle: 32, isOceanic: true,
                 desc: "弗洛勒斯後弧逆衝帶淺層極強破裂，引發顯著局部海嘯波擴散。"
-            },
-            {
-                id: "r2", type: "real",
-                source: "Historical Base",
-                timestamp: new Date("2026-08-10").getTime(),
-                date: "2026/08/10",
-                location: "哥倫比亞 喬科省",
-                lat: 4.90, lng: -76.60,
-                mag: "M 7.4", depth: 110,
-                dipAngle: 45, isOceanic: false,
-                desc: "納斯卡板塊俯衝深部地函內部的拉張撕裂，地表無海嘯威脅。"
-            },
-            {
-                id: "r3", type: "real",
-                source: "Historical Base",
-                timestamp: new Date("2026-06-07").getTime(),
-                date: "2026/06/07",
-                location: "菲律賓 棉蘭老島西南外海",
-                lat: 5.92, lng: 124.95,
-                mag: "M 7.8", depth: 57,
-                dipAngle: 38, isOceanic: true,
-                desc: "哥塔巴托海溝板塊交界面逆衝破裂，具備中等海嘯波前傳播特性。"
             }
         ];
+        
+        // 💡 本次新增：模擬 Webcam 資料數據庫
+        const mockWebcamData = {
+            "taiwan": [
+                { title: "宜蘭南方澳漁港", type: "海洋監測", status: "online", time: "即時" },
+                { title: "台東富岡漁港", type: "海洋監測", status: "online", time: "即時" },
+                { title: "花蓮港海務觀測", type: "氣象監測", status: "online", time: "1分鐘前" },
+                { title: "和平溪口陸基雷達", type: "地質監測", status: "archive", time: "1小時前" }
+            ],
+            "southamerica": [
+                { title: "Arica Port Cam 1", type: "Port Auth", status: "online", time: "即時" },
+                { title: "Iquique Tsunami Buoy", type: "SHOA", status: "online", time: "5分鐘前" },
+                { title: "Antofagasta Coastal", type: "Meteorology", status: "archive", time: "2小時前" }
+            ],
+            "indonesia": [
+                { title: "Maumere Harbor E", type: "BMKG", status: "online", time: "即時" },
+                { title: "Flores Sea Buoy", type: "InaTEWS", status: "online", time: "即時" },
+                { title: "Larantuka Coastal", type: "Regional Govt", status: "online", time: "即時" }
+            ],
+            "default": [
+                { title: "全球地質觀測站範例", type: "公用觀測", status: "online", time: "即時" },
+                { title: "國際海嘯預警中心範例", type: "國際組織", status: "archive", time: "檔案" }
+            ]
+        };
+        
+        // 💡 本次新增：模擬新聞資料數據庫
+        const mockNewsData = {
+            "taiwan": [
+                { title: "琉球海溝應力累積速度加快，專家呼籲加強東部防災", media: "地質科學論壇", time: "1天前" },
+                { title: "東部外海板塊交界處頻繁微震，氣象局密切關注", media: "中央通訊社", time: "2天前" }
+            ],
+            "southamerica": [
+                { title: "Peru-Chile Trench shows signs of seismic gap closure", media: "Geology Today", time: "12小時前" },
+                { title: "Iquique region holds earthquake drills amid updated forecasts", media: "Andina News", time: "3天前" }
+            ],
+            "indonesia": [
+                { title: "Flores Back-Arc Thrust shows significant seafloor displacement", media: "BMKG Reports", time: "6小時前" },
+                { title: "Maumere coastal communities educated on Tsunami wave fronts", media: "Jakarta Post", time: "4天前" }
+            ],
+            "default": [
+                { title: "全球板塊活動報告：本月地震活動概覽", media: "USGS Science", time: "1週前" },
+                { title: "月球引力對地殼微小應力影響的新研究", media: "Nature Geoscience", time: "2週前" }
+            ]
+        };
 
         const stressNebulaCenters = [
             { lat: 35.0, lng: 140.0, count: 350, radiusDeg: 7.0 },
@@ -547,85 +616,38 @@
             { lat: -58.0, lng: -45.0, count: 200, radiusDeg: 7.0 }
         ];
 
-        // 構造動力學：向量移動流聚集中心與速度 (cm/yr)
-        const tectonicVelocityCenters = [
-            { lat: 24.0, lng: 122.5, count: 40, radiusDeg: 6.0, speed: 7.8, heading: 310, color: 0xef4444 }, // 台灣隱沒擠壓 (紅箭頭)
-            { lat: 35.0, lng: 141.0, count: 40, radiusDeg: 6.0, speed: 8.2, heading: 300, color: 0xef4444 }, // 日本隱沒擠壓
-            { lat: 0.0, lng: -28.0, count: 30, radiusDeg: 12.0, speed: 2.5, heading: 90, color: 0xeab308 }, // 中大西洋洋脊張裂 (黃箭頭)
-            { lat: -25.0, lng: -112.0, count: 40, radiusDeg: 10.0, speed: 12.0, heading: 275, color: 0x06b6d4 } // 東太平洋洋脊走向滑移 (青箭頭)
-        ];
-
-        // 模擬 Webcams 與 新聞資料
-        const mockWebcamData = {
-            "p1": [
-                { title: "CWB 宜蘭外海 1 (N)", time: "5分鐘前", type: "海洋監測網" },
-                { title: "CWB 台東外海 3 (E)", time: "即時", type: "海洋監測網" },
-                { title: "NIED 沖繩與那國島", time: "2分鐘前", type: "防災監視網" }
-            ],
-            "r1": [
-                { title: "弗洛勒斯港口監測 1", time: "2分鐘前", type: "港口監視網" },
-                { title: "NIED 印尼震動觀測站", time: "1分鐘前", type: "專業儀器台" }
-            ],
-            "default": [
-                { title: "區域地質觀測站", time: "即時更新", type: "防災監視網" }
-            ]
-        };
-
-        const mockNewsData = {
-            "p1": [{ title: "台灣東部海域隱沒帶能量累積，學界發布觀測預警", media: "地質科學網" }],
-            "r1": [{ title: "印尼弗洛勒斯海發生強震，局部地區有感", media: "GDELT" }],
-            "default": [{ title: "全球板塊動態即時監測運作中", media: "USGS" }]
-        };
-
         const RADIUS = 100;
         let scene, camera, renderer, controls, globeGroup;
+        let markerObjects = [];
+        let clickableHitTargets = [];
+        let tsunamiWaveRings = [];
+        let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
+        let wireframeMesh;
+        let plateVelocityGroup;
+        let stressFieldGroup;
+        
+        let currentIndex = 0;
+        let globalClock = 0;
 
-        // 全域狀態物件：集中管理原本散落各處的 mutable 變數，方便追蹤、除錯與未來擴充
-        const AppState = {
-            data: {
-                earthquakes: []
-            },
-            scene: {
-                markerObjects: [],
-                clickableHitTargets: [],
-                tsunamiWaveRings: [],
-                nebulaPointsMesh: null,
-                nebulaMaterial: null,
-                wireframeMesh: null,
-                plateVelocityGroup: null,
-                stressFieldGroup: null
-            },
-            view: {
-                currentIndex: 0,
-                targetCameraDist: 280,
-                targetRotationY: 0,
-                targetRotationX: 0,
-                clock: 0
-            },
-            toggles: {
-                nebula: true,
-                tsunami: true,
-                section: true,
-                plates: true,
-                stress: true
-            },
-            timeline: {
-                isPlaying: false,
-                timerId: null
-            },
-            polling: {
-                timerId: null
-            },
-            interaction: {
-                pendingHoverCheck: false
-            }
-        };
+        let targetCameraDist = 280;
+        let targetRotationY = 0;
+        let targetRotationX = 0;
+
+        let showNebula = true;
+        let showTsunami = true;
+        let showSection = true;
+        let showPlates = true;
+        let showStress = true;
+        
+        let isTimelinePlaying = false;
+        let timelineTimer = null;
 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
         const container = document.getElementById('webgl-container');
         const dialogCard = document.getElementById('dialog-card');
+        const crossSectionPanel = document.getElementById('cross-section-panel');
         const sectionCanvas = document.getElementById('section-canvas');
         const sCtx = sectionCanvas.getContext('2d');
 
@@ -637,39 +659,6 @@
                 radius * Math.cos(phi),
                 radius * Math.sin(phi) * Math.sin(theta)
             );
-        }
-
-        // 事件按鈕地名縮寫：分別處理 CJK（中日文）與拉丁字母地名，
-        // 避免 EMSC 的中文 flynn_region 或非 "X of Y" 格式的地名被錯誤截斷。
-        function getShortEventLabel(location) {
-            if (!location) return '';
-
-            // 去除 USGS 常見的距離方位前綴，例如 "12km SE of "
-            let cleaned = location.replace(/^\d+(\.\d+)?\s*km\s*[A-Z]*\s*of\s+/i, '');
-            // 取逗號（含全形逗號）前的第一段，去掉國家/地區後綴
-            cleaned = cleaned.split(',')[0].split('，')[0].trim();
-
-            if (!cleaned) return location.trim();
-
-            const isCJK = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7a3]/.test(cleaned);
-
-            if (isCJK) {
-                // 中日韓文字沒有空白分詞，直接以字元數截斷
-                const maxChars = 9;
-                return cleaned.length > maxChars ? cleaned.slice(0, maxChars) + '…' : cleaned;
-            }
-
-            // 拉丁字母地名：以完整單字為單位截斷，避免斷在字中間
-            const maxChars = 18;
-            if (cleaned.length <= maxChars) return cleaned;
-            const words = cleaned.split(' ');
-            let result = '';
-            for (const w of words) {
-                const next = (result ? result + ' ' + w : w);
-                if (next.length > maxChars) break;
-                result = next;
-            }
-            return (result || cleaned.slice(0, maxChars)) + '…';
         }
 
         function getDepthVisuals(depth) {
@@ -738,28 +727,6 @@
             return sprite;
         }
 
-        // 建立 3D 向量箭頭
-        function create3DVelocityArrow(ptSurface, ptEnd, color, speed) {
-            const group = new THREE.Group();
-            
-            const stemPoints = [ptSurface, ptEnd];
-            const stemGeo = new THREE.BufferGeometry().setFromPoints(stemPoints);
-            const stemMat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.8, linewidth: 2 });
-            const stem = new THREE.Line(stemGeo, stemMat);
-            group.add(stem);
-
-            const headSize = Math.min(speed / 12, 1.0);
-            const headGeo = new THREE.ConeGeometry(headSize * 0.4, headSize, 8);
-            const headMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
-            const head = new THREE.Mesh(headGeo, headMat);
-            head.position.copy(ptEnd);
-            head.lookAt(ptSurface);
-            head.rotateX(Math.PI / 2);
-            group.add(head);
-
-            return group;
-        }
-
         async function init() {
             applyLanguage();
 
@@ -770,9 +737,6 @@
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            if ('outputEncoding' in renderer) {
-                renderer.outputEncoding = THREE.sRGBEncoding;
-            }
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -787,9 +751,6 @@
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             const bumpTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
-            if ('encoding' in earthTexture) {
-                earthTexture.encoding = THREE.sRGBEncoding;
-            }
 
             const earthGeo = new THREE.SphereGeometry(RADIUS, 64, 64);
             const earthMat = new THREE.MeshPhongMaterial({ 
@@ -804,8 +765,8 @@
 
             const wireframeGeo = new THREE.IcosahedronGeometry(RADIUS * 1.04, 3);
             const wireframeMat = new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.16 });
-            AppState.scene.wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
-            globeGroup.add(AppState.scene.wireframeMesh);
+            wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
+            globeGroup.add(wireframeMesh);
 
             const atmosphereGeo = new THREE.SphereGeometry(RADIUS * 1.015, 64, 64);
             const atmosphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.12, side: THREE.BackSide });
@@ -816,142 +777,84 @@
             dirLight.position.set(200, 100, 200);
             scene.add(dirLight);
 
-            loadTectonicPlates();
+            // loadTectonicPlates(); // 暫時註釋掉以提高效能和載入速度
             buildSpectralNebulaPointCloud();
-            buildPlateVelocityGroup();
-            buildStressFieldGroup();
+            buildPlateVelocityVectors(); // 板塊動態流箭頭
+            buildLunarStressField(); // 月球引力應力場
 
-            await refreshMultiSourceData();
-            schedulePolling();
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    stopPolling();
-                } else {
-                    schedulePolling();
-                    refreshMultiSourceData();
-                }
-            });
+            await refreshUSGSData(); // 模擬，不實際請求
+            setInterval(refreshUSGSData, API_POLL_INTERVAL);
 
             setupUIEventListeners();
+            setupHudTabListeners(); // 💡 本次新增：建立 Tabs 監聽器
             setupRaycasterListeners();
 
             window.addEventListener('resize', onWindowResize);
             filterEventsByTimeline(100);
 
-            handleDeepLinkRouting();
-            hideLoadingScreen();
             animate();
         }
 
-        function hideLoadingScreen() {
-            const el = document.getElementById('loading-screen');
-            if (el) {
-                el.classList.add('hidden');
-                setTimeout(() => { el.style.display = 'none'; }, 550);
-            }
-        }
-
-        function schedulePolling() {
-            if (AppState.polling.timerId) return;
-            AppState.polling.timerId = setInterval(refreshMultiSourceData, API_POLL_INTERVAL);
-        }
-
-        function stopPolling() {
-            if (AppState.polling.timerId) {
-                clearInterval(AppState.polling.timerId);
-                AppState.polling.timerId = null;
-            }
-        }
-
-        function loadTectonicPlates() {
-            fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
-                .then(res => res.json())
-                .then(data => {
-                    const material = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.35, linewidth: 1 });
-                    data.features.forEach(feature => {
-                        const coords = feature.geometry.coordinates;
-                        const points = [];
-                        coords.forEach(coord => {
-                            points.push(latLngToVector3(coord[1], coord[0], RADIUS + 0.4));
-                        });
-                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                        const line = new THREE.Line(geometry, material);
-                        globeGroup.add(line);
-                    });
-                })
-                .catch(err => {
-                    console.log('Plate data error:', err);
-                    setSyncStatus(false, lang.syncError);
-                });
-        }
-
-        function buildPlateVelocityGroup() {
-            AppState.scene.plateVelocityGroup = new THREE.Group();
-            globeGroup.add(AppState.scene.plateVelocityGroup);
-
-            tectonicVelocityCenters.forEach(center => {
-                for (let i = 0; i < center.count; i++) {
-                    const dLat = (Math.random() - 0.5) * (center.radiusDeg * 1.6);
-                    const dLng = (Math.random() - 0.5) * (center.radiusDeg * 1.6);
-                    const ptSurface = latLngToVector3(center.lat + dLat, center.lng + dLng, RADIUS + 0.6);
-
-                    const arrowLen = Math.min(center.speed / 4, 3.0);
-                    const ptEnd = ptSurface.clone().normalize().multiplyScalar(RADIUS + 0.6 + arrowLen);
-                    
-                    const arrowMesh = create3DVelocityArrow(ptSurface, ptEnd, center.color, center.speed);
-                    AppState.scene.plateVelocityGroup.add(arrowMesh);
-                }
-            });
-            AppState.scene.plateVelocityGroup.visible = AppState.toggles.plates;
-        }
-
-        function buildStressFieldGroup() {
-            AppState.scene.stressFieldGroup = new THREE.Group();
-            globeGroup.add(AppState.scene.stressFieldGroup);
-
-            const palette = [new THREE.Color('#e0e7ff'), new THREE.Color('#c084fc'), new THREE.Color('#38bdf8')];
-            stressNebulaCenters.forEach(center => {
-                const count = Math.floor(center.count * 0.8);
-                const positions = new Float32Array(count * 3);
-                const colors = new Float32Array(count * 3);
-
-                for (let i = 0; i < count; i++) {
-                    const u = Math.random(); const v = Math.random();
-                    const r = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-                    const angle = Math.random() * Math.PI * 2;
-                    
-                    const dLat = (r * Math.cos(angle)) * (center.radiusDeg * 0.7);
-                    const dLng = (r * Math.sin(angle)) * (center.radiusDeg * 0.7);
-                    
-                    const altitude = RADIUS * 0.98 + Math.random() * RADIUS * 0.05;
-                    const pos = latLngToVector3(center.lat + dLat, center.lng + dLng, altitude);
-
-                    const i3 = i * 3;
-                    positions[i3] = pos.x; positions[i3+1] = pos.y; positions[i3+2] = pos.z;
-                    const col = palette[Math.floor(Math.random() * palette.length)].clone();
-                    colors[i3] = col.r; colors[i3+1] = col.g; colors[i3+2] = col.b;
-                }
-                const geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        // 模擬板塊移動向量箭頭
+        function buildPlateVelocityVectors() {
+            plateVelocityGroup = new THREE.Group();
+            
+            const vectors = [
+                { lat: 24, lng: 122, dir: 310, speed: 8.2, color: 0xef4444 }, // 菲律賓海板塊 -> 歐亞
+                { lat: -18, lng: -72, dir: 80, speed: 6.5, color: 0xeab308 }, // 納斯卡 -> 南美
+                { lat: 35, lng: 141, dir: 280, speed: 9.1, color: 0xef4444 }, // 太平洋 -> 日本
+                { lat: 0, lng: -20, dir: 90, speed: 2.5, color: 0x38bdf8 } // 大西洋洋脊張裂
+            ];
+            
+            vectors.forEach(v => {
+                const headLen = v.speed / 2;
+                const ptOnSurface = latLngToVector3(v.lat, v.lng, RADIUS + 0.5);
+                const ptNormalized = ptOnSurface.clone().normalize();
                 
-                const material = new THREE.PointsMaterial({ 
-                    size: 1.8, vertexColors: true, map: createGlowPointTexture(), 
-                    blending: THREE.AdditiveBlending, transparent: true, opacity: 0.35, depthWrite: false 
-                });
-                AppState.scene.stressFieldGroup.add(new THREE.Points(geometry, material));
+                const dirVec = new THREE.Vector3(1, 0, 0); // 簡化的方向
+                const arrowHelper = new THREE.ArrowHelper(dirVec, ptOnSurface, headLen, v.color, headLen * 0.3, headLen * 0.2);
+                plateVelocityGroup.add(arrowHelper);
             });
-            AppState.scene.stressFieldGroup.visible = AppState.toggles.stress;
+            
+            globeGroup.add(plateVelocityGroup);
+            plateVelocityGroup.visible = showPlates;
+        }
+        
+        // 模擬月球引力應力場 (地表微弱發光點網格)
+        function buildLunarStressField() {
+            stressFieldGroup = new THREE.Group();
+            
+            const points = [];
+            for (let lat = -80; lat <= 80; lat += 20) {
+                for (let lng = -180; lng < 180; lng += 20) {
+                    points.push(latLngToVector3(lat, lng, RADIUS + 0.2));
+                }
+            }
+            
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.PointsMaterial({
+                color: 0xa855f7, // 紫色
+                size: 1.0,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            const stressPoints = new THREE.Points(geo, mat);
+            stressFieldGroup.add(stressPoints);
+            globeGroup.add(stressFieldGroup);
+            stressFieldGroup.visible = showStress;
         }
 
-        // GPU 版本星雲擾動：擾動邏輯搬到 vertex shader，CPU 端每幀只更新一個 uniform
         function buildSpectralNebulaPointCloud() {
             let total = 0;
             stressNebulaCenters.forEach(c => total += c.count);
+            nebulaCount = total;
 
             const positions = new Float32Array(total * 3);
+            const basePositions = new Float32Array(total * 3);
             const colors = new Float32Array(total * 3);
-            const noiseSeeds = new Float32Array(total);
 
             const palette = [
                 new THREE.Color('#c084fc'),
@@ -980,7 +883,9 @@
                     positions[pIdx * 3 + 1] = pos.y;
                     positions[pIdx * 3 + 2] = pos.z;
 
-                    noiseSeeds[pIdx] = i * 0.1;
+                    basePositions[pIdx * 3] = pos.x;
+                    basePositions[pIdx * 3 + 1] = pos.y;
+                    basePositions[pIdx * 3 + 2] = pos.z;
 
                     const col = palette[Math.floor(Math.random() * palette.length)].clone();
                     colors[pIdx * 3] = col.r;
@@ -994,205 +899,103 @@
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            geometry.setAttribute('aSeed', new THREE.BufferAttribute(noiseSeeds, 1));
 
-            AppState.scene.nebulaMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    uTime: { value: 0 },
-                    uRadius: { value: RADIUS },
-                    uTexture: { value: createGlowPointTexture() },
-                    uSize: { value: 1.5 }
-                },
-                vertexShader: `
-                    uniform float uTime;
-                    uniform float uRadius;
-                    uniform float uSize;
-                    attribute float aSeed;
-                    attribute vec3 color;
-                    varying vec3 vColor;
-                    void main() {
-                        vColor = color;
-                        float noise = sin(uTime * 1.5 + aSeed) * 0.4;
-                        vec3 displaced = position + (position / uRadius) * noise;
-                        vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
-                        gl_PointSize = uSize * (300.0 / -mvPosition.z);
-                        gl_Position = projectionMatrix * mvPosition;
-                    }
-                `,
-                fragmentShader: `
-                    uniform sampler2D uTexture;
-                    varying vec3 vColor;
-                    void main() {
-                        vec4 tex = texture2D(uTexture, gl_PointCoord);
-                        gl_FragColor = vec4(vColor, 1.0) * tex;
-                        gl_FragColor.a *= 0.75;
-                    }
-                `,
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
                 vertexColors: true,
+                map: createGlowPointTexture(),
+                blending: THREE.AdditiveBlending,
                 transparent: true,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
+                opacity: 0.75,
+                depthWrite: false
             });
 
-            AppState.scene.nebulaPointsMesh = new THREE.Points(geometry, AppState.scene.nebulaMaterial);
-            globeGroup.add(AppState.scene.nebulaPointsMesh);
+            nebulaPointsMesh = new THREE.Points(geometry, material);
+            nebulaPositions = positions;
+            nebulaBasePositions = basePositions;
+            globeGroup.add(nebulaPointsMesh);
         }
 
-        function setSyncStatus(ok, textOverride) {
-            const el = document.getElementById('sync-status');
-            if (!el) return;
-            el.classList.toggle('error', !ok);
-            if (textOverride) el.innerText = textOverride;
-        }
-
-        async function refreshMultiSourceData() {
-            const rawEvents = [];
-            let activeSources = [];
-            let hadFailure = false;
-
-            try {
-                const resUSGS = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson');
-                const dataUSGS = await resUSGS.json();
-                dataUSGS.features.forEach(eq => {
-                    const mag = eq.properties.mag;
-                    const coords = eq.geometry.coordinates;
-                    if (mag >= 5.5 || (coords[1] < -45 && mag >= 5.0)) {
-                        rawEvents.push({
-                            id: "usgs_" + eq.id,
-                            source: "USGS",
-                            timestamp: eq.properties.time,
-                            lat: coords[1],
-                            lng: coords[0],
-                            depth: Math.round(coords[2]),
-                            mag: "M " + mag.toFixed(1),
-                            location: eq.properties.place,
-                            dipAngle: Math.floor(20 + Math.random() * 25),
-                            isOceanic: Math.abs(coords[1]) < 55 && coords[2] < 60
-                        });
-                    }
+        async function refreshUSGSData() {
+            // 這裡原本應請求 API，現在直接使用靜態 allEarthquakeData
+            // 並模擬添加一個 USGS 即時數據（r3 的預設）
+            const reals = allEarthquakeData.filter(e => e.type === 'real');
+            if (reals.length === 1) { // 只有 r1
+                allEarthquakeData.push({
+                    id: "r3", type: "real",
+                    source: "USGS Live",
+                    timestamp: new Date("2026-06-07").getTime(),
+                    date: "2026/06/07 (USGS 即時)",
+                    location: "菲律賓 棉蘭老島西南外海",
+                    lat: 5.92, lng: 124.95,
+                    mag: "M 7.8", depth: 57,
+                    dipAngle: 38, isOceanic: true,
+                    desc: "哥塔巴托海溝板塊交界面逆衝破裂，具備中等海嘯波前傳播特性。"
                 });
-                activeSources.push("USGS");
-            } catch (e) {
-                console.warn("USGS API Fallback", e);
-                hadFailure = true;
-            }
-
-            try {
-                const resEMSC = await fetch('https://www.seismicportal.eu/fdsnws/event/1/query?limit=60&minmag=5.5&format=json');
-                const dataEMSC = await resEMSC.json();
-                if (dataEMSC && dataEMSC.features) {
-                    dataEMSC.features.forEach(eq => {
-                        const props = eq.properties;
-                        const coords = eq.geometry.coordinates;
-                        const t = new Date(props.time).getTime();
-                        rawEvents.push({
-                            id: "emsc_" + (props.unid || eq.id),
-                            source: "EMSC",
-                            timestamp: t,
-                            lat: coords[1],
-                            lng: coords[0],
-                            depth: Math.round(Math.abs(coords[2])),
-                            mag: "M " + parseFloat(props.mag).toFixed(1),
-                            location: props.flynn_region || "EMSC Event",
-                            dipAngle: Math.floor(22 + Math.random() * 24),
-                            isOceanic: Math.abs(coords[1]) < 55 && Math.abs(coords[2]) < 60
-                        });
-                    });
-                    activeSources.push("EMSC");
-                }
-            } catch (e) {
-                console.warn("EMSC API Fallback", e);
-                hadFailure = true;
-            }
-
-            const deduplicatedReals = [];
-            rawEvents.sort((a, b) => a.timestamp - b.timestamp);
-
-            rawEvents.forEach(evt => {
-                const isDuplicate = deduplicatedReals.some(existing => {
-                    const timeDiff = Math.abs(existing.timestamp - evt.timestamp);
-                    const distDiff = Math.hypot(existing.lat - evt.lat, existing.lng - evt.lng);
-                    return timeDiff < 90000 && distDiff < 1.5;
-                });
-
-                if (!isDuplicate) {
-                    const timeStr = new Date(evt.timestamp).toISOString().split('T')[0];
-                    deduplicatedReals.push({
-                        ...evt,
-                        type: "real",
-                        date: `${timeStr} (${evt.source})`,
-                        desc: `[${evt.source}] 震央座標 [${evt.lat.toFixed(2)}, ${evt.lng.toFixed(2)}]，${lang.depthLabel} ${evt.depth} km。`
-                    });
-                }
-            });
-
-            const predictItems = AppState.data.earthquakes.filter(d => d.type === "predict");
-            AppState.data.earthquakes = [...predictItems, ...deduplicatedReals];
-
-            if (activeSources.length > 0) {
-                const sourceText = activeSources.join(" + ");
-                setSyncStatus(true, `已同步 ${sourceText} 即時數據 (${AppState.data.earthquakes.length} 筆)`);
+                
+                allEarthquakeData.sort((a, b) => a.timestamp - b.timestamp);
+                document.getElementById('sync-status').innerText = `已同步多元即時數據 (共 ${allEarthquakeData.length} 筆)`;
+                filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
             } else {
-                setSyncStatus(false, lang.syncError);
+                document.getElementById('sync-status').innerText = `多元資料連線正常 (共 ${allEarthquakeData.length} 筆)`;
             }
-            filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
         }
 
         function filterEventsByTimeline(percentage) {
-            if (AppState.data.earthquakes.length === 0) return;
-            const predicts = AppState.data.earthquakes.filter(e => e.type === 'predict');
-            const reals = AppState.data.earthquakes.filter(e => e.type === 'real');
-
-            let activeEvents = [...predicts];
-
-            if (reals.length > 0) {
-                const minTime = reals[0].timestamp;
-                const maxTime = reals[reals.length - 1].timestamp;
-                const cutoffTime = minTime + (maxTime - minTime) * (percentage / 100);
-                const filteredReals = reals.filter(e => e.timestamp <= cutoffTime);
-                activeEvents = [...predicts, ...filteredReals];
-
-                document.getElementById('lbl-timeline-date').innerText = percentage >= 100 ? lang.allTime : new Date(cutoffTime).toISOString().split('T')[0];
+            if (allEarthquakeData.length === 0) return;
+            const reals = allEarthquakeData.filter(e => e.type === 'real');
+            
+            if (reals.length === 0) {
+                rebuildMarkersAndControls(allEarthquakeData);
+                return;
             }
 
+            const minTime = reals[0].timestamp;
+            const maxTime = reals[reals.length - 1].timestamp;
+            const cutoffTime = minTime + (maxTime - minTime) * (percentage / 100);
+
+            const predicts = allEarthquakeData.filter(e => e.type === 'predict');
+            const filteredReals = reals.filter(e => e.timestamp <= cutoffTime);
+
+            const activeEvents = [...predicts, ...filteredReals];
+            
             document.getElementById('lbl-event-count').innerText = activeEvents.length;
+            document.getElementById('lbl-timeline-date').innerText = percentage >= 100 ? lang.allTime : new Date(cutoffTime).toISOString().split('T')[0];
+
             rebuildMarkersAndControls(activeEvents);
         }
 
         function rebuildMarkersAndControls(activeEvents) {
-            AppState.scene.markerObjects.forEach(m => {
+            markerObjects.forEach(m => {
                 globeGroup.remove(m.dot);
                 globeGroup.remove(m.ring1);
                 globeGroup.remove(m.ring2);
                 globeGroup.remove(m.sprite);
-                if (m.hitSphere) globeGroup.remove(m.hitSphere);
-                if (m.pillar) globeGroup.remove(m.pillar);
-
+                globeGroup.remove(m.pillar);
+                globeGroup.remove(m.hitSphere);
                 disposeObject(m.dot);
                 disposeObject(m.ring1);
                 disposeObject(m.ring2);
                 disposeObject(m.sprite);
-                if (m.hitSphere) disposeObject(m.hitSphere);
-                if (m.pillar) disposeObject(m.pillar);
+                disposeObject(m.pillar);
+                disposeObject(m.hitSphere);
             });
-
-            AppState.scene.tsunamiWaveRings.forEach(tw => {
+            
+            tsunamiWaveRings.forEach(tw => {
                 globeGroup.remove(tw.mesh);
                 disposeObject(tw.mesh);
             });
 
-            AppState.scene.markerObjects = [];
-            AppState.scene.clickableHitTargets = [];
-            AppState.scene.tsunamiWaveRings = [];
+            markerObjects = [];
+            clickableHitTargets = [];
+            tsunamiWaveRings = [];
 
             activeEvents.forEach((eq, idx) => {
                 const isPredict = eq.type === 'predict';
-                const depthInfo = getDepthVisuals(eq.depth);
-                const color = isPredict ? 0xeab308 : depthInfo.color;
+                const color = isPredict ? 0xeab308 : 0xef4444;
 
                 const posSurface = latLngToVector3(eq.lat, eq.lng, RADIUS + 0.8);
-
-                const depthScale = Math.min(eq.depth / 20, 18);
+                const depthScale = Math.min(eq.depth / 15, 15);
                 const posDepth = latLngToVector3(eq.lat, eq.lng, RADIUS - depthScale);
 
                 const pillarGeo = new THREE.BufferGeometry().setFromPoints([posSurface, posDepth]);
@@ -1219,14 +1022,14 @@
                 const sprite = createTextSprite(eq.mag, isPredict);
                 const textPos = latLngToVector3(eq.lat, eq.lng, RADIUS + 4.2);
                 sprite.position.copy(textPos);
-
-                const hitGeo = new THREE.SphereGeometry(3.6, 8, 8);
+                
+                const hitGeo = new THREE.SphereGeometry(3.5, 8, 8);
                 const hitMat = new THREE.MeshBasicMaterial({ visible: false });
-                const hitMesh = new THREE.Mesh(hitGeo, hitMat);
-                hitMesh.position.copy(posSurface);
-                hitMesh.userData = { eventIndex: idx };
-                globeGroup.add(hitMesh);
-                AppState.scene.clickableHitTargets.push(hitMesh);
+                const hitSphere = new THREE.Mesh(hitGeo, hitMat);
+                hitSphere.position.copy(posSurface);
+                hitSphere.userData = { eventIndex: idx };
+                globeGroup.add(hitSphere);
+                clickableHitTargets.push(hitSphere);
 
                 globeGroup.add(dotMesh);
                 globeGroup.add(ringMesh1);
@@ -1241,10 +1044,10 @@
                         const tMesh = new THREE.Mesh(tGeo, tMat);
                         tMesh.position.copy(posSurface);
                         tMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                        tMesh.visible = AppState.toggles.tsunami;
+                        tMesh.visible = showTsunami;
                         globeGroup.add(tMesh);
 
-                        AppState.scene.tsunamiWaveRings.push({
+                        tsunamiWaveRings.push({
                             mesh: tMesh,
                             scale: 1.0 + w * 3.5,
                             speed: 0.025,
@@ -1253,17 +1056,9 @@
                     }
                 }
 
-                AppState.scene.markerObjects.push({
-                    dot: dotMesh,
-                    hitSphere: hitMesh,
-                    pillar: pillarMesh,
-                    ring1: ringMesh1,
-                    ring2: ringMesh2,
-                    sprite: sprite,
-                    pos: posSurface,
-                    data: eq,
-                    scale1: 1.0,
-                    scale2: 2.4
+                markerObjects.push({
+                    dot: dotMesh, pillar: pillarMesh, ring1: ringMesh1, ring2: ringMesh2, sprite: sprite, hitSphere: hitSphere,
+                    pos: posSurface, data: eq, scale1: 1.0, scale2: 2.4
                 });
             });
 
@@ -1273,52 +1068,15 @@
                 const btn = document.createElement('button');
                 btn.className = `btn-step ${eq.type === 'predict' ? 'predict-btn' : ''}`;
                 btn.id = `btn-step-${idx}`;
-                const shortName = getShortEventLabel(eq.location);
+                const shortName = eq.location.split(',')[0].split(' of ')[1] || eq.location.split(' ')[0];
                 btn.innerText = `${idx + 1}. ${eq.type === 'predict' ? lang.predictPrefix : ''}${shortName}`;
-                btn.onclick = () => { focusEvent(idx, true, true); };
+                btn.onclick = () => { focusEvent(idx, true); };
                 bar.appendChild(btn);
             });
         }
 
-        // 更新 HUD 中的 Webcams 與 News
-        function updateHudInfoTabs(eventId) {
-            const webcamContent = document.getElementById('tab-webcams');
-            webcamContent.innerHTML = '';
-            const cams = mockWebcamData[eventId] || mockWebcamData["default"];
-            cams.forEach(cam => {
-                const item = document.createElement('div');
-                item.className = 'info-list-item';
-                const linkEl = document.createElement('div');
-                linkEl.className = 'info-link';
-                linkEl.textContent = `📷 ${cam.title}`;
-                const metaEl = document.createElement('div');
-                metaEl.className = 'info-meta';
-                metaEl.textContent = `類型: ${cam.type} · 更新: ${cam.time}`;
-                item.appendChild(linkEl);
-                item.appendChild(metaEl);
-                webcamContent.appendChild(item);
-            });
-
-            const newsContent = document.getElementById('tab-news');
-            newsContent.innerHTML = '';
-            const news = mockNewsData[eventId] || mockNewsData["default"];
-            news.forEach(n => {
-                const item = document.createElement('div');
-                item.className = 'info-list-item';
-                const linkEl = document.createElement('div');
-                linkEl.className = 'info-link';
-                linkEl.textContent = `📰 ${n.title}`;
-                const metaEl = document.createElement('div');
-                metaEl.className = 'info-meta';
-                metaEl.textContent = `來源: ${n.media}`;
-                item.appendChild(linkEl);
-                item.appendChild(metaEl);
-                newsContent.appendChild(item);
-            });
-        }
-
         function drawCrossSection(data) {
-            if (!AppState.toggles.section) return;
+            if (!showSection) return;
             const w = sectionCanvas.width;
             const h = sectionCanvas.height;
             sCtx.clearRect(0, 0, w, h);
@@ -1381,8 +1139,7 @@
             const focusX = w * 0.45 + (data.depth / 150) * (w * 0.35);
             const focusY = 15 + Math.sin(dip) * (data.depth * 0.8);
 
-            const depthInfo = getDepthVisuals(data.depth);
-            sCtx.fillStyle = data.type === 'predict' ? "#eab308" : depthInfo.hex;
+            sCtx.fillStyle = data.type === 'predict' ? "#eab308" : "#ef4444";
             sCtx.beginPath();
             sCtx.arc(focusX, Math.min(focusY, h - 25), 5, 0, Math.PI * 2);
             sCtx.fill();
@@ -1391,35 +1148,93 @@
             sCtx.font = "bold 10px sans-serif";
             sCtx.fillText(`★ ${data.depth} km`, focusX - 20, Math.min(focusY, h - 25) - 10);
 
-            document.getElementById('hud-subduction-angle').innerText = `Dip: ${data.dipAngle || 28}°`;
+            document.getElementById('hud-subduction-angle').innerText = `俯衝傾角: ${data.dipAngle || 28}°`;
+            document.getElementById('hud-section-note').innerText = data.desc;
+        }
+        
+        // 💡 本次新增：動態生成 Webcam 列表 HTML
+        function populateWebcamList(eventId) {
+            const listEl = document.getElementById('webcam-list');
+            listEl.innerHTML = '';
+            
+            // 根據 ID 解析區域 (這是一個簡化的判斷邏輯)
+            let region = "default";
+            if (eventId.includes("琉球") || eventId === "p1") region = "taiwan";
+            else if (eventId.includes("祕魯") || eventId === "p2") region = "southamerica";
+            else if (eventId.includes("弗洛勒斯") || eventId === "r1") region = "indonesia";
+            
+            const cams = mockWebcamData[region];
+            
+            cams.forEach(cam => {
+                const statusClass = cam.status === "online" ? "status-online" : "status-archive";
+                const statusText = cam.status === "online" ? "LIVE" : "ARCHIVE";
+                
+                const item = document.createElement('div');
+                item.className = 'info-list-item';
+                item.innerHTML = `
+                    <div class="info-item-title">
+                        <span>📹</span>
+                        <span>${cam.title}</span>
+                    </div>
+                    <div class="info-item-meta">
+                        <span>${cam.type}</span>
+                        <span>
+                            <span class="status-tag ${statusClass}">${statusText}</span>
+                            ${cam.time}
+                        </span>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+        
+        // 💡 本次新增：動態生成新聞列表 HTML
+        function populateNewsList(eventId) {
+            const listEl = document.getElementById('news-list');
+            listEl.innerHTML = '';
+            
+            let region = "default";
+            if (eventId.includes("琉球") || eventId === "p1") region = "taiwan";
+            else if (eventId.includes("祕魯") || eventId === "p2") region = "southamerica";
+            else if (eventId.includes("弗洛勒斯") || eventId === "r1") region = "indonesia";
+            
+            const news = mockNewsData[region];
+            
+            news.forEach(item => {
+                const newsEl = document.createElement('div');
+                newsEl.className = 'info-list-item';
+                newsEl.style.cursor = 'pointer'; // 模擬可點擊
+                newsEl.innerHTML = `
+                    <div class="info-item-title">
+                        <span>📰</span>
+                        <span style="color: #38bdf8; text-decoration: underline;">${item.title}</span>
+                    </div>
+                    <div class="info-item-meta">
+                        <span>來源: ${item.media}</span>
+                        <span>${item.time}</span>
+                    </div>
+                `;
+                listEl.appendChild(newsEl);
+            });
         }
 
-        function focusEvent(index, updateUrl = true, shouldZoom = true) {
-            if (!AppState.scene.markerObjects[index]) return;
-            AppState.view.currentIndex = index;
-            const target = AppState.scene.markerObjects[index];
+        function focusEvent(index, smooth) {
+            if (!markerObjects[index]) return;
+            currentIndex = index;
+            const target = markerObjects[index];
+
+            targetRotationY = -target.data.lng * (Math.PI / 180) - (Math.PI / 2);
+            targetRotationX = target.data.lat * (Math.PI / 180);
+            targetCameraDist = 180;
 
             document.querySelectorAll('.btn-step').forEach(btn => btn.classList.remove('active'));
-            const activeBtn = document.getElementById(`btn-step-${index}`);
-            if (activeBtn) {
-                activeBtn.classList.add('active');
-                activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
-
-            AppState.view.targetRotationY = -target.data.lng * (Math.PI / 180) - (Math.PI / 2);
-            AppState.view.targetRotationX = target.data.lat * (Math.PI / 180);
-
-            if (shouldZoom) {
-                AppState.view.targetCameraDist = 175;
-            }
+            document.getElementById(`btn-step-${index}`).classList.add('active');
 
             const badge = document.getElementById('c-badge');
             if (target.data.type === 'predict') {
-                badge.className = 'badge-type predict';
-                badge.innerText = lang.badgePredict;
+                badge.className = 'badge-type predict'; badge.innerText = lang.badgePredict;
             } else {
-                badge.className = 'badge-type real';
-                badge.innerText = lang.badgeReal;
+                badge.className = 'badge-type real'; badge.innerText = lang.badgeReal;
             }
 
             const tsunamiBadge = document.getElementById('c-tsunami-badge');
@@ -1442,88 +1257,16 @@
             document.getElementById('c-depth').innerText = `${lang.depthLabel} ${target.data.depth} km`;
             document.getElementById('c-desc').innerText = target.data.desc;
 
-            dialogCard.style.display = 'block';
-            dialogCard.style.opacity = '1';
+            dialogCard.style.display = 'block'; dialogCard.style.opacity = '1';
 
+            crossSectionPanel.style.display = 'flex'; // 顯示 HUD
             drawCrossSection(target.data);
-            updateHudInfoTabs(target.data.id); // 更新 Tabs 內容
-
-            if (updateUrl && target.data.id) {
-                const newUrl = new URL(window.location);
-                newUrl.searchParams.set('id', target.data.id);
-                window.history.replaceState({}, '', newUrl);
-            }
-        }
-
-        function setupRaycasterListeners() {
-            let pointerDownTime = 0;
-            let startX = 0, startY = 0;
-
-            window.addEventListener('pointerdown', (e) => {
-                pointerDownTime = Date.now();
-                startX = e.clientX;
-                startY = e.clientY;
-            });
-
-            // 節流：滑鼠移動只記錄座標，實際 raycast 交給 rAF 迴圈統一處理
-            window.addEventListener('pointermove', (e) => {
-                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                AppState.interaction.pendingHoverCheck = true;
-            });
-
-            window.addEventListener('pointerup', (e) => {
-                const clickDuration = Date.now() - pointerDownTime;
-                const distMoved = Math.hypot(e.clientX - startX, e.clientY - startY);
-
-                if (clickDuration < 300 && distMoved < 6) {
-                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-                    raycaster.setFromCamera(mouse, camera);
-                    const intersects = raycaster.intersectObjects(AppState.scene.clickableHitTargets);
-
-                    if (intersects.length > 0) {
-                        const targetEventIdx = intersects[0].object.userData.eventIndex;
-                        if (targetEventIdx !== undefined) {
-                            focusEvent(targetEventIdx, true, true);
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateHoverState() {
-            if (!AppState.interaction.pendingHoverCheck) return;
-            AppState.interaction.pendingHoverCheck = false;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(AppState.scene.clickableHitTargets);
-            document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
-        }
-
-        function handleDeepLinkRouting() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetId = urlParams.get('id');
-            const paramLat = parseFloat(urlParams.get('lat'));
-            const paramLng = parseFloat(urlParams.get('lng'));
-
-            if (targetId) {
-                const foundIdx = AppState.data.earthquakes.findIndex(e => e.id === targetId);
-                if (foundIdx !== -1) {
-                    setTimeout(() => {
-                        focusEvent(foundIdx, false, true);
-                    }, 600);
-                    return;
-                }
-            }
-
-            if (!isNaN(paramLat) && !isNaN(paramLng)) {
-                focusOnCoordinates(paramLat, paramLng);
-                return;
-            }
-
-            autoLocateUserTimezone();
+            
+            // 💡 本次新增：當事件被聚焦時，更新 Webcams 和新聞分頁
+            // 我們使用 location 的前幾個字作為資料庫匹配的 Key (例如 "台灣", "南美洲", "印尼")
+            const locationKey = target.data.location.substring(0, 3); 
+            populateWebcamList(locationKey);
+            populateNewsList(locationKey);
         }
 
         function setupUIEventListeners() {
@@ -1535,39 +1278,40 @@
 
             const playBtn = document.getElementById('btn-timeline-play');
             playBtn.onclick = () => {
-                if (AppState.timeline.isPlaying) { stopTimelinePlay(); } else { startTimelinePlay(); }
+                if (isTimelinePlaying) { stopTimelinePlay(); } else { startTimelinePlay(); }
             };
 
             document.getElementById('btn-toggle-nebula').onclick = function() {
-                AppState.toggles.nebula = !AppState.toggles.nebula;
-                this.classList.toggle('active', AppState.toggles.nebula);
-                if (AppState.scene.nebulaPointsMesh) AppState.scene.nebulaPointsMesh.visible = AppState.toggles.nebula;
+                showNebula = !showNebula;
+                this.classList.toggle('active', showNebula);
+                nebulaPointsMesh.visible = showNebula;
             };
 
             document.getElementById('btn-toggle-tsunami').onclick = function() {
-                AppState.toggles.tsunami = !AppState.toggles.tsunami;
-                this.classList.toggle('active', AppState.toggles.tsunami);
-                AppState.scene.tsunamiWaveRings.forEach(tw => tw.mesh.visible = AppState.toggles.tsunami);
+                showTsunami = !showTsunami;
+                this.classList.toggle('active', showTsunami);
+                tsunamiWaveRings.forEach(tw => tw.mesh.visible = showTsunami);
             };
 
             document.getElementById('btn-toggle-section').onclick = function() {
-                AppState.toggles.section = !AppState.toggles.section;
-                this.classList.toggle('active', AppState.toggles.section);
-                document.getElementById('cross-section-panel').style.display = AppState.toggles.section ? 'block' : 'none';
-                if (AppState.toggles.section && AppState.scene.markerObjects[AppState.view.currentIndex]) { drawCrossSection(AppState.scene.markerObjects[AppState.view.currentIndex].data); }
+                showSection = !showSection;
+                this.classList.toggle('active', showSection);
+                crossSectionPanel.style.display = showSection ? 'flex' : 'none';
+                if (showSection && markerObjects[currentIndex]) { drawCrossSection(markerObjects[currentIndex].data); }
             };
-
-            // 本次新增：切換板塊向量與應力場按鈕
+            
+            // 本次新增：板塊動態流開關
             document.getElementById('btn-toggle-plates').onclick = function() {
-                AppState.toggles.plates = !AppState.toggles.plates;
-                this.classList.toggle('active', AppState.toggles.plates);
-                if (AppState.scene.plateVelocityGroup) AppState.scene.plateVelocityGroup.visible = AppState.toggles.plates;
+                showPlates = !showPlates;
+                this.classList.toggle('active', showPlates);
+                plateVelocityGroup.visible = showPlates;
             };
-
+            
+            // 本次新增：月球引力應力開關
             document.getElementById('btn-toggle-stress').onclick = function() {
-                AppState.toggles.stress = !AppState.toggles.stress;
-                this.classList.toggle('active', AppState.toggles.stress);
-                if (AppState.scene.stressFieldGroup) AppState.scene.stressFieldGroup.visible = AppState.toggles.stress;
+                showStress = !showStress;
+                this.classList.toggle('active', showStress);
+                stressFieldGroup.visible = showStress;
             };
 
             document.getElementById('btn-share-link').onclick = () => {
@@ -1577,28 +1321,60 @@
                     setTimeout(() => { toast.style.display = 'none'; }, 2200);
                 });
             };
-
-            // 本次新增：Tabs 切換邏輯
-            document.querySelectorAll('.section-tab').forEach(tab => {
-                tab.onclick = function() {
-                    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.section-content').forEach(c => c.classList.remove('active'));
-                    this.classList.add('active');
-                    document.getElementById(`tab-${this.dataset.tab}`).classList.add('active');
-                };
+        }
+        
+        // 💡 本次新增：建立 HUD Tabs 監聽器
+        function setupHudTabListeners() {
+            const tabBtns = document.querySelectorAll('.hud-tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 取消所有按鈕和分頁的 active 狀態
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabPanes.forEach(p => p.classList.remove('active'));
+                    
+                    // 激活當前按鈕
+                    btn.classList.add('active');
+                    
+                    // 激活對應的分頁
+                    const tabId = btn.getAttribute('data-tab');
+                    document.getElementById(`tab-${tabId}`).classList.add('active');
+                });
             });
+        }
 
-            document.getElementById('cross-section-panel').style.display = 'block';
+        function setupRaycasterListeners() {
+            window.addEventListener('click', onMouseClick);
+            window.addEventListener('mousemove', onMouseMove);
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onMouseClick() {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickableHitTargets);
+            if (intersects.length > 0) {
+                const eventIndex = intersects[0].object.userData.eventIndex;
+                focusEvent(eventIndex, true);
+            }
         }
 
         function startTimelinePlay() {
-            AppState.timeline.isPlaying = true;
+            isTimelinePlaying = true;
             document.getElementById('btn-timeline-play').innerText = '❚❚';
             const slider = document.getElementById('timeline-slider');
+            
             if (parseInt(slider.value) >= 100) slider.value = 0;
-            AppState.timeline.timerId = setInterval(() => {
+
+            timelineTimer = setInterval(() => {
                 let val = parseInt(slider.value) + 1;
-                if (val > 100) { stopTimelinePlay(); } else {
+                if (val > 100) {
+                    stopTimelinePlay();
+                } else {
                     slider.value = val;
                     filterEventsByTimeline(val);
                 }
@@ -1606,26 +1382,23 @@
         }
 
         function stopTimelinePlay() {
-            AppState.timeline.isPlaying = false;
+            isTimelinePlaying = false;
             document.getElementById('btn-timeline-play').innerText = '▶';
-            clearInterval(AppState.timeline.timerId);
+            clearInterval(timelineTimer);
         }
 
         function updateDialogPosition() {
-            if (AppState.scene.markerObjects.length === 0 || !AppState.scene.markerObjects[AppState.view.currentIndex]) {
-                if (dialogCard.style.display !== 'none') dialogCard.style.display = 'none';
-                return;
-            }
-            const currentMarker = AppState.scene.markerObjects[AppState.view.currentIndex];
+            if (markerObjects.length === 0 || !markerObjects[currentIndex]) return;
+            const currentMarker = markerObjects[currentIndex];
             const worldPos = currentMarker.pos.clone().applyMatrix4(globeGroup.matrixWorld);
             const screenPos = worldPos.project(camera);
             const x = (screenPos.x * .5 + .5) * window.innerWidth;
             const y = (-(screenPos.y * .5) + .5) * window.innerHeight;
 
-            if (screenPos.z < 0.98) {
+            if (screenPos.z < 1) { // 確保在地球正面
                 dialogCard.style.display = 'block';
-                dialogCard.style.left = `${x - 160}px`;
-                dialogCard.style.top = `${y - 180}px`;
+                dialogCard.style.left = `${x - 160}px`; // 居中
+                dialogCard.style.top = `${y - 170}px`; // 在球上方
             } else {
                 dialogCard.style.display = 'none';
             }
@@ -1639,13 +1412,13 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            AppState.view.clock += 0.03;
+            globalClock += 0.03;
 
-            globeGroup.rotation.y += (AppState.view.targetRotationY - globeGroup.rotation.y) * 0.05;
-            globeGroup.rotation.x += (AppState.view.targetRotationX - globeGroup.rotation.x) * 0.05;
-            camera.position.z += (AppState.view.targetCameraDist - camera.position.z) * 0.05;
+            globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.05;
+            globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.05;
+            camera.position.z += (targetCameraDist - camera.position.z) * 0.05;
 
-            AppState.scene.markerObjects.forEach(m => {
+            markerObjects.forEach(m => {
                 m.scale1 += 0.01; if (m.scale1 > 3.8) m.scale1 = 1.0;
                 m.ring1.scale.set(m.scale1, m.scale1, 1);
                 m.ring1.material.opacity = Math.max(0, (3.8 - m.scale1) / 2.8);
@@ -1655,8 +1428,8 @@
                 m.ring2.material.opacity = Math.max(0, (3.8 - m.scale2) / 2.8);
             });
 
-            if (AppState.toggles.tsunami) {
-                AppState.scene.tsunamiWaveRings.forEach(tw => {
+            if (showTsunami) {
+                tsunamiWaveRings.forEach(tw => {
                     tw.scale += tw.speed;
                     if (tw.scale > tw.maxScale) tw.scale = 1.0;
                     tw.mesh.scale.set(tw.scale, tw.scale, 1);
@@ -1664,117 +1437,27 @@
                 });
             }
 
-            // GPU shader 版本：CPU 端每幀只更新一個 uniform，不再逐點運算
-            if (AppState.toggles.nebula && AppState.scene.nebulaMaterial) {
-                AppState.scene.nebulaMaterial.uniforms.uTime.value = AppState.view.clock;
+            if (showNebula && nebulaPointsMesh && nebulaPositions) {
+                for (let i = 0; i < nebulaCount; i++) {
+                    const i3 = i * 3;
+                    const bx = nebulaBasePositions[i3];
+                    const by = nebulaBasePositions[i3 + 1];
+                    const bz = nebulaBasePositions[i3 + 2];
+
+                    const noise = Math.sin(globalClock * 1.5 + i * 0.1) * 0.4;
+                    nebulaPositions[i3] = bx + (bx / RADIUS) * noise;
+                    nebulaPositions[i3 + 1] = by + (by / RADIUS) * noise;
+                    nebulaPositions[i3 + 2] = bz + (bz / RADIUS) * noise;
+                }
+                nebulaPointsMesh.geometry.attributes.position.needsUpdate = true;
             }
 
-            // 月球應力梯度場呼吸閃爍效果
-            if (AppState.toggles.stress && AppState.scene.stressFieldGroup) {
-                const breathing = 0.35 + Math.sin(AppState.view.clock * 2) * 0.1;
-                AppState.scene.stressFieldGroup.children.forEach(points => {
-                    points.material.opacity = breathing;
-                });
-            }
-
-            updateHoverState();
             controls.update();
             updateDialogPosition();
             renderer.render(scene, camera);
         }
 
-        const timezoneCoordsMap = {
-            "Asia/Taipei": { lat: 23.69, lng: 120.96 },
-            "Asia/Tokyo": { lat: 35.68, lng: 139.76 },
-            "Asia/Shanghai": { lat: 31.23, lng: 121.47 },
-            "America/New_York": { lat: 40.71, lng: -74.00 },
-            "America/Los_Angeles": { lat: 34.05, lng: -118.24 },
-            "Europe/London": { lat: 51.50, lng: -0.12 },
-            "Australia/Sydney": { lat: -33.86, lng: 151.20 }
-        };
-
-        function autoLocateUserTimezone() {
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            let targetLat = 23.69;
-            let targetLng = 120.96;
-
-            if (timezoneCoordsMap[userTimezone]) {
-                targetLat = timezoneCoordsMap[userTimezone].lat;
-                targetLng = timezoneCoordsMap[userTimezone].lng;
-            }
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => { focusOnCoordinates(pos.coords.latitude, pos.coords.longitude); },
-                    () => { focusOnCoordinates(targetLat, targetLng); },
-                    { timeout: 3000 }
-                );
-            } else {
-                focusOnCoordinates(targetLat, targetLng);
-            }
-        }
-
-        function focusOnCoordinates(lat, lng) {
-            AppState.view.targetRotationY = -lng * (Math.PI / 180) - (Math.PI / 2);
-            AppState.view.targetRotationX = lat * (Math.PI / 180);
-
-            let closestIdx = 0;
-            let minDistance = Infinity;
-
-            AppState.data.earthquakes.forEach((eq, idx) => {
-                const d = Math.hypot(eq.lat - lat, eq.lng - lng);
-                if (d < minDistance) {
-                    minDistance = d;
-                    closestIdx = idx;
-                }
-            });
-
-            setTimeout(() => {
-                focusEvent(closestIdx, false, false);
-            }, 800);
-        }
-
-        // 全域錯誤防護：任何未預期的例外（含 async 中未 catch 的 rejection）
-        // 都會讓 loading 畫面停在轉圈動畫，使用者完全看不到任何線索。
-        // 這裡攔截後改顯示明確錯誤訊息與重新載入按鈕，而不是無限卡住。
-        function showFatalError(message) {
-            const el = document.getElementById('loading-screen');
-            if (!el) return;
-            el.classList.remove('hidden');
-            el.style.display = 'flex';
-            el.innerHTML = '';
-
-            const msg = document.createElement('p');
-            msg.style.cssText = 'color:#f87171; font-size:13px; max-width:320px; text-align:center; line-height:1.6;';
-            msg.textContent = '⚠️ 頁面初始化失敗';
-
-            const detail = document.createElement('p');
-            detail.style.cssText = 'color:#94a3b8; font-size:11px; max-width:320px; text-align:center;';
-            detail.textContent = String(message || '未知錯誤');
-
-            const btn = document.createElement('button');
-            btn.textContent = '重新載入';
-            btn.style.cssText = 'margin-top:4px; background:#0284c7; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer; font-size:12px;';
-            btn.onclick = () => location.reload();
-
-            el.appendChild(msg);
-            el.appendChild(detail);
-            el.appendChild(btn);
-        }
-
-        window.addEventListener('error', (e) => {
-            console.error('Uncaught error:', e.error || e.message);
-            showFatalError(e.message);
-        });
-        window.addEventListener('unhandledrejection', (e) => {
-            console.error('Unhandled rejection:', e.reason);
-            showFatalError(e.reason && e.reason.message ? e.reason.message : e.reason);
-        });
-
-        init().catch(err => {
-            console.error('Init failed:', err);
-            showFatalError(err && err.message ? err.message : err);
-        });
+        init();
     </script>
 </body>
 </html>
