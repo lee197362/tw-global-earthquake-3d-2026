@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全球板塊構造應力波動與即時地震監測 (Wave粒子版)</title>
+    <title>全球板塊構造應力場與即時地震監測 (多光譜粒子星雲版)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -59,10 +59,9 @@
         .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         .legend-item:last-child { margin-bottom: 0; }
         .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .dot.real { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-        .dot.predict { background: #eab308; box-shadow: 0 0 8px #eab308; }
-        .dot.high-stress { background: #00f0ff; box-shadow: 0 0 8px #00f0ff; }
-        .dot.divergent { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+        .dot.real { border: 1.5px solid #ef4444; background: transparent; }
+        .dot.predict { border: 1.5px solid #eab308; background: transparent; }
+        .dot.nebula { background: linear-gradient(135deg, #ec4899, #06b6d4); box-shadow: 0 0 8px #06b6d4; }
 
         #dialog-card {
             position: absolute;
@@ -130,16 +129,15 @@
 <body>
 
     <div class="header">
-        <h1>全球板塊構造應力波動與即時地震監測</h1>
-        <p>依地殼運動速率密度分級之動態 Wave 應力流光粒子波</p>
+        <h1>全球板塊構造應力場與即時地震監測</h1>
+        <p>多光譜 GPU 點雲星雲粒場 · 科技幾何外骨骼 · 鏤空波紋與芮氏數值</p>
         <div class="sync-status" id="sync-status">USGS 即時資料載入中...</div>
     </div>
 
     <div class="legend-panel">
-        <div class="legend-item"><div class="dot real"></div><span>實際發生地震 (USGS即時 / 歷史)</span></div>
-        <div class="legend-item"><div class="dot predict"></div><span>科學預測高風險區 (應力累積)</span></div>
-        <div class="legend-item"><div class="dot high-stress"></div><span>強擠壓隱沒帶 (高密度快波 8-10cm/yr)</span></div>
-        <div class="legend-item"><div class="dot divergent"></div><span>張裂/洋脊擴張帶 (中低密度暖波 2-5cm/yr)</span></div>
+        <div class="legend-item"><div class="dot real"></div><span>實際發生地震 (中空波紋 + 數值)</span></div>
+        <div class="legend-item"><div class="dot predict"></div><span>科學預測高風險區 (評估數值)</span></div>
+        <div class="legend-item"><div class="dot nebula"></div><span>多光譜應力微粒雲 (GPU Points)</span></div>
     </div>
 
     <div id="dialog-card">
@@ -163,24 +161,24 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        const API_POLL_INTERVAL = 300000; // 5分鐘輪詢一次
+        const API_POLL_INTERVAL = 300000;
 
         let allEarthquakeData = [
             {
                 id: "p1", type: "predict",
                 date: "預測視窗：2026 Q3-Q4",
-                location: "台灣東部外海 (琉球海溝延續段)",
+                location: "台灣東部外海 (琉球海溝段)",
                 lat: 23.8, lng: 122.5,
-                mag: "評估 M 7.0+", depth: "15-30 km",
-                desc: "菲律賓海板塊持續朝西北向隱沒擠壓歐亞板塊，應力鎖定與形變速率高達 8 cm/yr。"
+                mag: "M 7.2", depth: "15-30 km",
+                desc: "菲律賓海板塊持續朝西北向隱沒擠壓歐亞板塊，應力累積鎖定顯著。"
             },
             {
                 id: "p2", type: "predict",
                 date: "預測視窗：2026 下半年",
                 location: "南美洲 中段隱沒帶 (祕魯/智利交界)",
                 lat: -18.5, lng: -70.3,
-                mag: "評估 M 7.5+", depth: "35 km",
-                desc: "納斯卡板塊東插強烈擠壓南美板塊，歷史特大逆衝破裂長週期窗口逼近。"
+                mag: "M 7.5", depth: "35 km",
+                desc: "納斯卡板塊東向隱沒擠壓南美板塊，歷史破裂週期窗口逼近。"
             },
             {
                 id: "r1", type: "real",
@@ -208,44 +206,20 @@
             }
         ];
 
-        // 公開地質構造應力邊界與形變速率曲線路徑定義
-        const stressFaultZones = [
-            // 1. 西太平洋與東亞俯衝帶（高應力密度，8-10 cm/yr）
-            {
-                name: "西太平洋俯衝帶 (千島-日本-琉球-菲律賓)",
-                coords: [[52, 160], [42, 145], [35, 140], [24, 123], [14, 125], [5, 126], [-8, 120]],
-                density: 35, speed: 0.0035, color: 0x00f0ff, type: "強逆衝隱沒"
-            },
-            // 2. 南美安地斯隱沒帶（納斯卡板塊擠壓，7-8 cm/yr）
-            {
-                name: "南美洲西緣海溝帶",
-                coords: [[5, -78], [-10, -78], [-23, -71], [-35, -73], [-48, -75]],
-                density: 28, speed: 0.0032, color: 0x00f0ff, type: "強逆衝隱沒"
-            },
-            // 3. 巽他-爪哇海溝（澳洲板塊北插，6-7 cm/yr）
-            {
-                name: "巽他-爪哇海溝帶",
-                coords: [[10, 93], [0, 98], [-8, 110], [-10, 125], [-5, 140]],
-                density: 26, speed: 0.0030, color: 0x38bdf8, type: "斜向擠壓"
-            },
-            // 4. 大西洋中洋脊擴張帶（張裂波浪，2-4 cm/yr）
-            {
-                name: "大西洋中洋脊",
-                coords: [[65, -18], [40, -30], [15, -42], [-5, -20], [-30, -14], [-55, -5]],
-                density: 18, speed: 0.0016, color: 0xf59e0b, type: "洋脊張裂擴張"
-            },
-            // 5. 南極與斯科舍海邊界帶
-            {
-                name: "斯科舍海與南極板塊邊界",
-                coords: [[-55, -65], [-60, -45], [-58, -25], [-62, 10], [-65, 60]],
-                density: 20, speed: 0.0022, color: 0xa855f7, type: "剪切走滑/擴張"
-            }
+        // 應力星雲斷層聚集中心點
+        const stressNebulaCenters = [
+            { lat: 35.0, lng: 140.0, count: 400, radiusDeg: 7.0 }, // 日本海溝
+            { lat: 23.5, lng: 122.0, count: 350, radiusDeg: 5.5 }, // 台灣-琉球
+            { lat: -8.0, lng: 115.0, count: 400, radiusDeg: 8.0 }, // 印尼爪哇
+            { lat: -20.0, lng: -72.0, count: 350, radiusDeg: 7.0 }, // 南美智利
+            { lat: 15.0, lng: -95.0, count: 300, radiusDeg: 6.0 },  // 中美洲海溝
+            { lat: -58.0, lng: -45.0, count: 250, radiusDeg: 7.0 }  // 斯科舍海/南極
         ];
 
         const RADIUS = 100;
         let scene, camera, renderer, controls, globeGroup;
         let markerObjects = [];
-        let waveParticleSystem = []; // 波動粒子陣列
+        let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
         let currentIndex = 0;
         let isAutoPlaying = false;
         let autoPlayTimer = null;
@@ -262,6 +236,41 @@
                 radius * Math.cos(phi),
                 radius * Math.sin(phi) * Math.sin(theta)
             );
+        }
+
+        // 產生柔和邊緣的發光圓點粒子紋理
+        function createGlowPointTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createTextSprite(text, isPredict) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = isPredict ? 'rgba(234, 179, 8, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+            ctx.font = 'bold 22px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 4;
+            ctx.fillText(text, 64, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(9, 4.5, 1);
+            return sprite;
         }
 
         async function init() {
@@ -283,7 +292,7 @@
             globeGroup = new THREE.Group();
             scene.add(globeGroup);
 
-            // 地球貼圖與材質
+            // 地球本體材質
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             const bumpTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
@@ -299,9 +308,19 @@
             const earthMesh = new THREE.Mesh(earthGeo, earthMat);
             globeGroup.add(earthMesh);
 
+            // 幾何外骨骼科技線網 (圖片中的科技幾何外框)
+            const wireframeGeo = new THREE.IcosahedronGeometry(RADIUS * 1.04, 3);
+            const wireframeMat = new THREE.MeshBasicMaterial({
+                color: 0x334155,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.18
+            });
+            globeGroup.add(new THREE.Mesh(wireframeGeo, wireframeMat));
+
             // 大氣光暈
             const atmosphereGeo = new THREE.SphereGeometry(RADIUS * 1.015, 64, 64);
-            const atmosphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide });
+            const atmosphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.12, side: THREE.BackSide });
             globeGroup.add(new THREE.Mesh(atmosphereGeo, atmosphereMat));
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.9));
@@ -309,11 +328,9 @@
             dirLight.position.set(200, 100, 200);
             scene.add(dirLight);
 
-            // 建立板塊交界底線與 Wave 應力流光粒子系統
             loadTectonicPlates();
-            buildWaveStressSystem();
+            buildSpectralNebulaPointCloud(); // 建立多光譜星雲粒子
 
-            // 載入即時地震資料並啟動輪詢
             await refreshUSGSData();
             setInterval(refreshUSGSData, API_POLL_INTERVAL);
 
@@ -322,12 +339,11 @@
             animate();
         }
 
-        // 載入全球主要板塊交界線
         function loadTectonicPlates() {
             fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
                 .then(res => res.json())
                 .then(data => {
-                    const material = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.4, linewidth: 1 });
+                    const material = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.35, linewidth: 1 });
                     data.features.forEach(feature => {
                         const coords = feature.geometry.coordinates;
                         const points = [];
@@ -342,40 +358,79 @@
                 .catch(err => console.log('Plate fallback:', err));
         }
 
-        // 依據構造應力密度建立 Wave 波動流光粒子
-        function buildWaveStressSystem() {
-            stressFaultZones.forEach(zone => {
-                // 產生 3D 曲線路徑
-                const curvePoints = zone.coords.map(c => latLngToVector3(c[0], c[1], RADIUS + 0.8));
-                const curve = new THREE.CatmullRomCurve3(curvePoints);
+        // 建立 GPU 多光譜彩色星雲點雲 (還原圖片的多色粒子團)
+        function buildSpectralNebulaPointCloud() {
+            let total = 0;
+            stressNebulaCenters.forEach(c => total += c.count);
+            nebulaCount = total;
 
-                // 依密度配置粒子數量
-                const count = zone.density;
-                for (let i = 0; i < count; i++) {
-                    const size = THREE.MathUtils.randFloat(0.8, 1.6);
-                    const pGeo = new THREE.SphereGeometry(size, 8, 8);
-                    const pMat = new THREE.MeshBasicMaterial({ 
-                        color: zone.color,
-                        transparent: true,
-                        opacity: 0.8
-                    });
-                    const pMesh = new THREE.Mesh(pGeo, pMat);
-                    globeGroup.add(pMesh);
+            const positions = new Float32Array(total * 3);
+            const basePositions = new Float32Array(total * 3);
+            const colors = new Float32Array(total * 3);
 
-                    waveParticleSystem.push({
-                        mesh: pMesh,
-                        curve: curve,
-                        progress: i / count,
-                        speed: zone.speed,
-                        baseSize: size,
-                        color: zone.color,
-                        phase: i * 0.4 // 波浪正弦相位差
-                    });
+            // 多光譜色系池：亮紫、深紅、粉橙、碧綠、亮青、藍白
+            const palette = [
+                new THREE.Color('#c084fc'), // 紫
+                new THREE.Color('#f43f5e'), // 洋紅
+                new THREE.Color('#fb923c'), // 橙
+                new THREE.Color('#2dd4bf'), // 碧綠
+                new THREE.Color('#38bdf8'), // 亮青
+                new THREE.Color('#e0e7ff')  // 亮白
+            ];
+
+            let pIdx = 0;
+            stressNebulaCenters.forEach(center => {
+                for (let i = 0; i < center.count; i++) {
+                    // 高斯常態分佈散佈經緯度
+                    const u = Math.random();
+                    const v = Math.random();
+                    const r = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+                    const angle = Math.random() * Math.PI * 2;
+                    
+                    const dLat = (r * Math.cos(angle)) * (center.radiusDeg * 0.4);
+                    const dLng = (r * Math.sin(angle)) * (center.radiusDeg * 0.4);
+                    const altitude = RADIUS + 0.5 + Math.random() * 2.5;
+
+                    const pos = latLngToVector3(center.lat + dLat, center.lng + dLng, altitude);
+
+                    positions[pIdx * 3] = pos.x;
+                    positions[pIdx * 3 + 1] = pos.y;
+                    positions[pIdx * 3 + 2] = pos.z;
+
+                    basePositions[pIdx * 3] = pos.x;
+                    basePositions[pIdx * 3 + 1] = pos.y;
+                    basePositions[pIdx * 3 + 2] = pos.z;
+
+                    // 依徑向距離混合多光譜色調
+                    const col = palette[Math.floor(Math.random() * palette.length)].clone();
+                    colors[pIdx * 3] = col.r;
+                    colors[pIdx * 3 + 1] = col.g;
+                    colors[pIdx * 3 + 2] = col.b;
+
+                    pIdx++;
                 }
             });
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.6,
+                vertexColors: true,
+                map: createGlowPointTexture(),
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.75,
+                depthWrite: false
+            });
+
+            nebulaPointsMesh = new THREE.Points(geometry, material);
+            nebulaPositions = positions;
+            nebulaBasePositions = basePositions;
+            globeGroup.add(nebulaPointsMesh);
         }
 
-        // USGS API 即時抓取 (支援高緯度/南極 M5.0+ 與全球 M5.6+)
         async function refreshUSGSData() {
             try {
                 const response = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson');
@@ -417,30 +472,53 @@
 
         function rebuildMarkersAndControls() {
             markerObjects.forEach(m => {
-                globeGroup.remove(m.mesh);
-                globeGroup.remove(m.ring);
+                globeGroup.remove(m.dot);
+                globeGroup.remove(m.ring1);
+                globeGroup.remove(m.ring2);
+                globeGroup.remove(m.sprite);
             });
             markerObjects = [];
 
             allEarthquakeData.forEach((eq) => {
-                const pos = latLngToVector3(eq.lat, eq.lng, RADIUS + 1.2);
-                const color = eq.type === 'real' ? 0xef4444 : 0xeab308;
+                const pos = latLngToVector3(eq.lat, eq.lng, RADIUS + 0.8);
+                const isPredict = eq.type === 'predict';
+                const color = isPredict ? 0xeab308 : 0xef4444;
 
-                const markerGeo = new THREE.SphereGeometry(eq.type === 'real' ? 2.2 : 2.8, 16, 16);
-                const markerMat = new THREE.MeshBasicMaterial({ color: color });
-                const markerMesh = new THREE.Mesh(markerGeo, markerMat);
-                markerMesh.position.copy(pos);
+                const dotGeo = new THREE.SphereGeometry(0.7, 12, 12);
+                const dotMat = new THREE.MeshBasicMaterial({ color: color });
+                const dotMesh = new THREE.Mesh(dotGeo, dotMat);
+                dotMesh.position.copy(pos);
 
-                const ringGeo = new THREE.RingGeometry(1.8, eq.type === 'real' ? 4.5 : 6.5, 32);
-                const ringMat = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
-                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-                ringMesh.position.copy(pos);
-                ringMesh.lookAt(new THREE.Vector3(0, 0, 0));
+                const ringGeo = new THREE.RingGeometry(1.2, 1.45, 32);
+                const ringMat1 = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+                const ringMesh1 = new THREE.Mesh(ringGeo, ringMat1);
+                ringMesh1.position.copy(pos);
+                ringMesh1.lookAt(new THREE.Vector3(0, 0, 0));
 
-                globeGroup.add(markerMesh);
-                globeGroup.add(ringMesh);
+                const ringMat2 = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+                const ringMesh2 = new THREE.Mesh(ringGeo.clone(), ringMat2);
+                ringMesh2.position.copy(pos);
+                ringMesh2.lookAt(new THREE.Vector3(0, 0, 0));
 
-                markerObjects.push({ mesh: markerMesh, ring: ringMesh, pos: pos, data: eq, scale: 1 });
+                const sprite = createTextSprite(eq.mag, isPredict);
+                const textPos = latLngToVector3(eq.lat, eq.lng, RADIUS + 4.2);
+                sprite.position.copy(textPos);
+
+                globeGroup.add(dotMesh);
+                globeGroup.add(ringMesh1);
+                globeGroup.add(ringMesh2);
+                globeGroup.add(sprite);
+
+                markerObjects.push({
+                    dot: dotMesh,
+                    ring1: ringMesh1,
+                    ring2: ringMesh2,
+                    sprite: sprite,
+                    pos: pos,
+                    data: eq,
+                    scale1: 1.0,
+                    scale2: 2.4
+                });
             });
 
             const bar = document.getElementById('timeline-controls');
@@ -539,33 +617,40 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            globalClock += 0.05;
+            globalClock += 0.03;
 
             globeGroup.rotation.y += (targetRotationY - globeGroup.rotation.y) * 0.04;
             globeGroup.rotation.x += (targetRotationX - globeGroup.rotation.x) * 0.04;
 
-            // 地震脈衝環動畫
+            // 地震中空環擴張 (速度降低 50%：0.01)
             markerObjects.forEach(m => {
-                m.scale += 0.02;
-                if (m.scale > 2.5) m.scale = 1;
-                m.ring.scale.set(m.scale, m.scale, 1);
-                m.ring.material.opacity = (2.5 - m.scale) / 1.5;
+                m.scale1 += 0.01;
+                if (m.scale1 > 3.8) m.scale1 = 1.0;
+                m.ring1.scale.set(m.scale1, m.scale1, 1);
+                m.ring1.material.opacity = Math.max(0, (3.8 - m.scale1) / 2.8);
+
+                m.scale2 += 0.01;
+                if (m.scale2 > 3.8) m.scale2 = 1.0;
+                m.ring2.scale.set(m.scale2, m.scale2, 1);
+                m.ring2.material.opacity = Math.max(0, (3.8 - m.scale2) / 2.8);
             });
 
-            // Wave 應力流光粒子波浪運動
-            waveParticleSystem.forEach(p => {
-                p.progress += p.speed;
-                if (p.progress > 1) p.progress = 0;
-                
-                const pt = p.curve.getPoint(p.progress);
-                p.mesh.position.copy(pt);
+            // 多光譜星雲粒子呼吸膨脹與三維擾動 (動態微流動)
+            if (nebulaPointsMesh && nebulaPositions) {
+                for (let i = 0; i < nebulaCount; i++) {
+                    const i3 = i * 3;
+                    const bx = nebulaBasePositions[i3];
+                    const by = nebulaBasePositions[i3 + 1];
+                    const bz = nebulaBasePositions[i3 + 2];
 
-                // 正弦波動脈衝（縮放與透明度律動）
-                const wave = Math.sin(globalClock * 2 + p.phase);
-                const dynamicScale = 1 + wave * 0.35;
-                p.mesh.scale.set(dynamicScale, dynamicScale, dynamicScale);
-                p.mesh.material.opacity = 0.5 + (wave + 1) * 0.25;
-            });
+                    // 三維正弦擾動，營造星雲呼吸與微渦流
+                    const noise = Math.sin(globalClock * 1.5 + i * 0.1) * 0.4;
+                    nebulaPositions[i3] = bx + (bx / RADIUS) * noise;
+                    nebulaPositions[i3 + 1] = by + (by / RADIUS) * noise;
+                    nebulaPositions[i3 + 2] = bz + (bz / RADIUS) * noise;
+                }
+                nebulaPointsMesh.geometry.attributes.position.needsUpdate = true;
+            }
 
             controls.update();
             updateDialogPosition();
