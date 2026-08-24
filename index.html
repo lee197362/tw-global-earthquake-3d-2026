@@ -272,7 +272,7 @@
     <script>
         const API_POLL_INTERVAL = 300000;
 
-        // 多國語言字典 (i18n)
+        // 多國語言字典
         const i18nDict = {
             "zh-TW": {
                 title: "全球板塊構造動力學與海嘯擴散平台",
@@ -330,7 +330,6 @@
             }
         };
 
-        // 自動判斷語言
         const userLang = navigator.language.startsWith('zh') ? 'zh-TW' : (navigator.language.startsWith('ja') ? 'ja' : 'en');
         const lang = i18nDict[userLang] || i18nDict['en'];
 
@@ -347,7 +346,6 @@
             document.getElementById('lbl-timeline-date').innerText = lang.allTime;
         }
 
-        // 預設資料
         let allEarthquakeData = [
             {
                 id: "p1", type: "predict",
@@ -440,6 +438,40 @@
             );
         }
 
+        // ==========================================
+        // 核心效能優化：深度釋放 WebGL / GPU 資源
+        // ==========================================
+        function disposeObject(obj) {
+            if (!obj) return;
+
+            // 1. 釋放幾何體 Geometry
+            if (obj.geometry) {
+                obj.geometry.dispose();
+            }
+
+            // 2. 釋放材質 Material 與關聯的貼圖 Texture
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(mat => disposeMaterial(mat));
+                } else {
+                    disposeMaterial(obj.material);
+                }
+            }
+
+            // 3. 遞迴釋放子節點
+            if (obj.children && obj.children.length > 0) {
+                obj.children.forEach(child => disposeObject(child));
+            }
+        }
+
+        function disposeMaterial(mat) {
+            if (!mat) return;
+            if (mat.map) mat.map.dispose();
+            if (mat.bumpMap) mat.bumpMap.dispose();
+            if (mat.specularMap) mat.specularMap.dispose();
+            mat.dispose();
+        }
+
         function createGlowPointTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -482,7 +514,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 避免超高解析度過載
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -661,10 +693,7 @@
                     }
                 });
 
-                // 時間排序
                 realItems.sort((a, b) => a.timestamp - b.timestamp);
-
-                // 【關鍵排序修復】：預測項目置頂排在最前面，歷史事件排在其後
                 allEarthquakeData = [...predictItems, ...realItems];
 
                 document.getElementById('sync-status').innerText = `${lang.synced} (${allEarthquakeData.length})`;
@@ -697,13 +726,26 @@
         }
 
         function rebuildMarkersAndControls(activeEvents) {
+            // ==========================================
+            // 執行深度顯存釋放，徹底防止記憶體堆積
+            // ==========================================
             markerObjects.forEach(m => {
                 globeGroup.remove(m.dot);
                 globeGroup.remove(m.ring1);
                 globeGroup.remove(m.ring2);
                 globeGroup.remove(m.sprite);
+
+                disposeObject(m.dot);
+                disposeObject(m.ring1);
+                disposeObject(m.ring2);
+                disposeObject(m.sprite);
             });
-            tsunamiWaveRings.forEach(tw => globeGroup.remove(tw.mesh));
+
+            tsunamiWaveRings.forEach(tw => {
+                globeGroup.remove(tw.mesh);
+                disposeObject(tw.mesh);
+            });
+
             markerObjects = [];
             tsunamiWaveRings = [];
 
@@ -769,7 +811,6 @@
                 });
             });
 
-            // 產生底部按鈕（預測排在最前）
             const bar = document.getElementById('events-btn-container');
             bar.innerHTML = '';
             activeEvents.forEach((eq, idx) => {
