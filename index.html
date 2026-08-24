@@ -1008,6 +1008,7 @@
                     uniform float uRadius;
                     uniform float uSize;
                     attribute float aSeed;
+                    attribute vec3 color;
                     varying vec3 vColor;
                     void main() {
                         vColor = color;
@@ -1733,7 +1734,47 @@
             }, 800);
         }
 
-        init();
+        // 全域錯誤防護：任何未預期的例外（含 async 中未 catch 的 rejection）
+        // 都會讓 loading 畫面停在轉圈動畫，使用者完全看不到任何線索。
+        // 這裡攔截後改顯示明確錯誤訊息與重新載入按鈕，而不是無限卡住。
+        function showFatalError(message) {
+            const el = document.getElementById('loading-screen');
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.style.display = 'flex';
+            el.innerHTML = '';
+
+            const msg = document.createElement('p');
+            msg.style.cssText = 'color:#f87171; font-size:13px; max-width:320px; text-align:center; line-height:1.6;';
+            msg.textContent = '⚠️ 頁面初始化失敗';
+
+            const detail = document.createElement('p');
+            detail.style.cssText = 'color:#94a3b8; font-size:11px; max-width:320px; text-align:center;';
+            detail.textContent = String(message || '未知錯誤');
+
+            const btn = document.createElement('button');
+            btn.textContent = '重新載入';
+            btn.style.cssText = 'margin-top:4px; background:#0284c7; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer; font-size:12px;';
+            btn.onclick = () => location.reload();
+
+            el.appendChild(msg);
+            el.appendChild(detail);
+            el.appendChild(btn);
+        }
+
+        window.addEventListener('error', (e) => {
+            console.error('Uncaught error:', e.error || e.message);
+            showFatalError(e.message);
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled rejection:', e.reason);
+            showFatalError(e.reason && e.reason.message ? e.reason.message : e.reason);
+        });
+
+        init().catch(err => {
+            console.error('Init failed:', err);
+            showFatalError(err && err.message ? err.message : err);
+        });
     </script>
 </body>
 </html>
