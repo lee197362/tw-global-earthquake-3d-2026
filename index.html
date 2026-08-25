@@ -14,7 +14,7 @@
         .header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
         .sync-badge { display: inline-block; margin-top: 6px; font-size: 11px; color: #4ade80; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3); }
 
-        /* 右側浮動面板 (筆記本式設計) */
+        /* 右側浮動面板 */
         #right-sidebar { 
             position: absolute; top: 70px; right: 0; width: 340px; height: calc(100vh - 170px); 
             background: rgba(15, 23, 42, 0.92); border-left: 1px solid rgba(56, 189, 248, 0.4); 
@@ -47,11 +47,9 @@
         .sidebar-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
         .sidebar-content::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 2px; }
 
-        /* 模組卡片通用設計 */
         .module-card { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; }
         .module-header { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; }
         
-        /* 1. 事件詳細資訊卡片專用樣式 */
         .badge-type { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; }
         .badge-type.real { background: #ef4444; color: #fff; }
         .badge-type.predict { background: #eab308; color: #0f172a; }
@@ -61,15 +59,12 @@
         .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
         .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
 
-        /* 2. 視角按鈕區 */
         .layer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn-mode { background: rgba(15, 23, 42, 0.85); color: #cbd5e1; border: 1px solid rgba(56, 189, 248, 0.3); backdrop-filter: blur(8px); padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-grow: 1; text-align: center;}
         .btn-mode.active, .btn-mode:hover { background: #0284c7; color: #fff; border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
 
-        /* 3. 剖面圖 */
         #section-canvas { width: 100%; height: 140px; background: #090d16; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
         
-        /* 4 & 5. 清單與連結 */
         .info-list-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #cbd5e1; transition: background 0.2s; padding: 6px; border-radius: 4px; }
         .info-list-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .info-list-item.hover-effect:hover { background: rgba(56, 189, 248, 0.1); cursor: pointer; }
@@ -80,7 +75,6 @@
         .status-archive { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
         .empty-text { color: #64748b; font-style: italic; font-size: 11px; text-align: center; padding: 10px 0; }
 
-        /* 底部時間軸 */
         .timeline-container { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); border-radius: 16px; padding: 12px 20px; width: min(850px, 92vw); display: flex; flex-direction: column; gap: 8px; }
         .timeline-top-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
         .timeline-slider-row { display: flex; align-items: center; gap: 12px; }
@@ -253,15 +247,16 @@
             "southamerica": [ { title: "Arica Port", type: "Port Auth", status: "online", time: "即時" }, { title: "Iquique Tsunami Buoy", type: "SHOA", status: "online", time: "5分鐘前" } ],
             "indonesia": [ { title: "Maumere Harbor E", type: "BMKG", status: "online", time: "即時" }, { title: "Flores Sea Buoy", type: "InaTEWS", status: "online", time: "即時" } ],
             "japan": [ { title: "福島港", type: "JMA", status: "online", time: "即時" }, { title: "東京湾", type: "海洋観測", status: "online", time: "即時" } ],
-            "default": [ { title: "全球公用觀測站", type: "衛星觀測", status: "archive", time: "1小時前" } ]
+            "default": [ { title: "全球地質與海洋觀測站", type: "衛星觀測", status: "archive", time: "1小時前" } ]
         };
         
+        // 修正：將容易造成 Google News 誤判的 "板塊活動綜述" 改為明確地質字眼
         const mockNewsData = {
-            "taiwan": [ { title: "東部外海板塊交界處微震頻繁", media: "中央通訊社", time: "2小時前" } ],
+            "taiwan": [ { title: "東部外海斷層交界處微震頻繁", media: "中央通訊社", time: "2小時前" } ],
             "southamerica": [ { title: "Peru-Chile Trench seismic gap monitoring", media: "Geology Today", time: "12小時前" } ],
             "indonesia": [ { title: "Flores thrust displacement warning issued", media: "BMKG Reports", time: "6小時前" } ],
             "japan": [ { title: "太平洋プレート沈み込み帯でひずみ蓄積", media: "NHK", time: "3時間前" } ],
-            "default": [ { title: "近期板塊活動綜述", media: "USGS", time: "1天前" } ]
+            "default": [ { title: "全球地震與斷層活動綜述", media: "USGS", time: "1天前" } ]
         };
 
         const RADIUS = 100;
@@ -274,7 +269,7 @@
         let stressFieldGroup;
         
         let targetCameraPos;
-        let isAutoTracking = false; // 修復: 防止鏡頭自回彈的開關
+        let isAutoTracking = false;
         let raycaster;
         let mouse;
         let globalClock = 0;
@@ -512,8 +507,6 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true; controls.dampingFactor = 0.05;
             controls.minDistance = 120; controls.maxDistance = 500;
-            
-            // 修復: 當使用者手動操作時解除自動鎖定，防止自回彈
             controls.addEventListener('start', () => { isAutoTracking = false; });
 
             globeGroup = new THREE.Group();
@@ -726,16 +719,29 @@
             return 'default';
         }
 
-        function populateList(containerId, dataArray, icon, type) {
+        // 修正：加入隱形關鍵字，避免 Google 導向金融股市板塊
+        function populateList(containerId, dataArray, icon, type, eventLocation = '') {
             const el = document.getElementById(containerId);
             el.innerHTML = '';
             if(!dataArray || dataArray.length === 0) { el.innerHTML = `<div class="empty-text">尚無區域資料...</div>`; return; }
             
             dataArray.forEach(item => {
                 const isOnline = item.status === "online";
+                
+                // 動態組合搜尋字串，強制加入地質/地震相關的 Context
+                let searchQuery = item.title;
+                if (type === 'webcam') {
+                    searchQuery += lang.title.includes('全球') ? ' 監視器 live' : ' live cam';
+                } else if (type === 'news') {
+                    // 若是新聞，強制加上 "地震 OR 地質" 以避免搜到股票市場的"板塊"
+                    const fallbackContext = lang.title.includes('全球') ? ' 地震 OR 地質' : ' earthquake';
+                    const locContext = eventLocation ? ` ${eventLocation} ` : ' ';
+                    searchQuery += locContext + fallbackContext;
+                }
+
                 const searchUrl = type === 'webcam' 
-                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}+live` 
-                    : `https://news.google.com/search?q=${encodeURIComponent(item.title)}`;
+                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}` 
+                    : `https://news.google.com/search?q=${encodeURIComponent(searchQuery)}`;
                 
                 el.innerHTML += `
                     <a href="${searchUrl}" target="_blank" style="text-decoration: none; display: block;" class="info-list-item hover-effect">
@@ -754,7 +760,7 @@
             const target = markerObjects[index];
 
             targetCameraPos = latLngToVector3(target.data.lat, target.data.lng, RADIUS * 1.8);
-            isAutoTracking = true; // 點擊時開啟追蹤
+            isAutoTracking = true;
 
             document.querySelectorAll('.btn-step').forEach(b => b.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-step-${index}`);
@@ -790,9 +796,11 @@
 
             drawCrossSection(target.data);
             
+            // 傳遞 location 作為強制搜尋條件
             const locKey = getRegionKey(target.data.location); 
-            populateList('webcam-list', mockWebcamData[locKey], '📹', 'webcam');
-            populateList('news-list', mockNewsData[locKey], '📰', 'news');
+            const cleanLocation = target.data.location.split(' ')[0]; // 擷取地點主詞 (如 "台灣東部外海")
+            populateList('webcam-list', mockWebcamData[locKey], '📹', 'webcam', cleanLocation);
+            populateList('news-list', mockNewsData[locKey], '📰', 'news', cleanLocation);
             
             document.getElementById('right-sidebar').classList.remove('collapsed');
             const toggleBtn = document.getElementById('btn-toggle-sidebar');
@@ -851,7 +859,6 @@
             requestAnimationFrame(animate);
             globalClock += 0.03;
 
-            // 修復：只有在開啟 isAutoTracking 時才強迫鏡頭移動，避免與滑鼠滾輪衝突
             if (isAutoTracking && targetCameraPos) {
                 camera.position.lerp(targetCameraPos, 0.04);
             }
