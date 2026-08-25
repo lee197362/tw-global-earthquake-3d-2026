@@ -6,13 +6,7 @@
     <title>Global Tectonic Dynamics & Real-time Earthquake Platform</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background-color: #020617; 
-            color: #f3f4f6; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            overflow: hidden; 
-            user-select: none;
-        }
+        body { background-color: #020617; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; user-select: none; }
         #webgl-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
         .header { position: absolute; top: 20px; left: 24px; z-index: 10; pointer-events: none; }
@@ -20,34 +14,20 @@
         .header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
         .sync-badge { display: inline-block; margin-top: 6px; font-size: 11px; color: #4ade80; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3); }
 
-        .view-controls { position: absolute; top: 20px; right: 24px; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .view-controls { position: absolute; top: 20px; right: 24px; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 500px; }
         .btn-mode { background: rgba(15, 23, 42, 0.85); color: #cbd5e1; border: 1px solid rgba(56, 189, 248, 0.3); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
         .btn-mode.active, .btn-mode:hover { background: #0284c7; color: #fff; border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
 
-        /* 右側可收合浮動欄位 */
-        #right-sidebar {
-            position: absolute; top: 70px; right: 0; width: 340px; height: calc(100vh - 170px);
-            background: rgba(15, 23, 42, 0.92); border-left: 1px solid rgba(56, 189, 248, 0.4);
-            border-top: 1px solid rgba(56, 189, 248, 0.4); border-bottom: 1px solid rgba(56, 189, 248, 0.4);
-            border-radius: 12px 0 0 12px; backdrop-filter: blur(12px); z-index: 15;
-            display: flex; flex-direction: column; transform: translateX(0);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 25px rgba(0,0,0,0.6);
-        }
+        /* 右側浮動面板 (UI 優化保留) */
+        #right-sidebar { position: absolute; top: 70px; right: 0; width: 340px; height: calc(100vh - 170px); background: rgba(15, 23, 42, 0.92); border-left: 1px solid rgba(56, 189, 248, 0.4); border-top: 1px solid rgba(56, 189, 248, 0.4); border-bottom: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px 0 0 12px; backdrop-filter: blur(12px); z-index: 15; display: flex; flex-direction: column; transform: translateX(0); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 25px rgba(0,0,0,0.6); }
         #right-sidebar.collapsed { transform: translateX(340px); }
-        .sidebar-toggle-btn {
-            position: absolute; left: -24px; top: 50%; transform: translateY(-50%);
-            width: 24px; height: 60px; background: rgba(15, 23, 42, 0.92);
-            border: 1px solid rgba(56, 189, 248, 0.4); border-right: none; border-radius: 8px 0 0 8px;
-            color: #38bdf8; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: -5px 0 10px rgba(0,0,0,0.3);
-        }
+        .sidebar-toggle-btn { position: absolute; left: -24px; top: 50%; transform: translateY(-50%); width: 24px; height: 60px; background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(56, 189, 248, 0.4); border-right: none; border-radius: 8px 0 0 8px; color: #38bdf8; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: -5px 0 10px rgba(0,0,0,0.3); }
         .sidebar-toggle-btn:hover { background: rgba(30, 41, 59, 0.95); }
         .sidebar-content { padding: 16px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 16px; }
         .sidebar-content::-webkit-scrollbar { width: 4px; }
         .sidebar-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
         .sidebar-content::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 2px; }
 
-        /* 模組卡片設計 */
         .module-card { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; }
         .module-header { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; }
         #section-canvas { width: 100%; height: 140px; background: #090d16; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
@@ -60,7 +40,6 @@
         .status-archive { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
         .empty-text { color: #64748b; font-style: italic; font-size: 11px; text-align: center; padding: 10px 0; }
 
-        /* 地震資訊對話框 */
         #dialog-card { position: absolute; z-index: 20; background: rgba(15, 23, 42, 0.94); border: 1px solid rgba(56, 189, 248, 0.5); backdrop-filter: blur(10px); border-radius: 12px; padding: 14px 18px; width: 320px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7); display: none; pointer-events: none; }
         .badge-type { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
         .badge-type.real { background: #ef4444; color: #fff; }
@@ -71,7 +50,6 @@
         .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
         .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
 
-        /* 時間軸 */
         .timeline-container { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); border-radius: 16px; padding: 12px 20px; width: min(850px, 92vw); display: flex; flex-direction: column; gap: 8px; }
         .timeline-top-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
         .timeline-slider-row { display: flex; align-items: center; gap: 12px; }
@@ -86,8 +64,6 @@
         .btn-step.predict-btn.active { background: #eab308; color: #0f172a; }
 
         #share-toast { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(14, 165, 233, 0.95); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; display: none; }
-        
-        /* 載入畫面 */
         #loading-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #020617; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-weight: bold; font-size: 18px; transition: opacity 0.5s; }
     </style>
 </head>
@@ -97,8 +73,17 @@
 
     <div class="header">
         <h1 id="ui-title">全球板塊構造動力學與海嘯擴散平台</h1>
-        <p id="ui-subtitle">USGS + EMSC 多來源即時融合 · 板塊動態流 · 記憶體效能優化版</p>
+        <p id="ui-subtitle">USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力應力 · 點擊特寫放大</p>
         <div class="sync-badge" id="sync-status">多元即時資料連線中...</div>
+    </div>
+
+    <div class="view-controls">
+        <!-- 復原：右上角的視圖開關按鈕 -->
+        <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
+        <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前</button>
+        <button class="btn-mode active" id="btn-toggle-plates">板塊動態流</button>
+        <button class="btn-mode active" id="btn-toggle-stress">月球引力</button>
+        <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
     </div>
 
     <div id="right-sidebar">
@@ -106,7 +91,7 @@
         <div class="sidebar-content">
             <div class="module-card">
                 <div class="module-header">
-                    <span>📐 構造幾何與震源剖面</span>
+                    <span id="ui-section-title">📐 構造幾何與震源剖面</span>
                     <span id="hud-subduction-angle" style="font-weight: normal; font-size: 11px; color: #94a3b8;">傾角: --</span>
                 </div>
                 <canvas id="section-canvas" width="308" height="140"></canvas>
@@ -115,11 +100,11 @@
                 </div>
             </div>
             <div class="module-card">
-                <div class="module-header"><span>📹 區域實況 Webcams</span></div>
+                <div class="module-header"><span id="ui-webcam-title">📹 區域實況 Webcams</span></div>
                 <div id="webcam-list"><div class="empty-text">尚無選定區域之影像訊號...</div></div>
             </div>
             <div class="module-card">
-                <div class="module-header"><span>📰 區域地質新聞快訊</span></div>
+                <div class="module-header"><span id="ui-news-title">📰 區域地質新聞快訊</span></div>
                 <div id="news-list"><div class="empty-text">尚無選定區域之新聞資訊...</div></div>
             </div>
         </div>
@@ -136,8 +121,8 @@
 
     <div class="timeline-container">
         <div class="timeline-top-row">
-            <span style="color:#94a3b8;">📅 時序基準：<b id="lbl-timeline-date" style="color:#38bdf8;">--</b></span>
-            <span style="color:#94a3b8;">顯示中事件：<b id="lbl-event-count" style="color:#f97316;">--</b> 筆</span>
+            <span style="color:#94a3b8;"><span id="ui-timeline-label">📅 時序基準：</span><b id="lbl-timeline-date" style="color:#38bdf8;">--</b></span>
+            <span style="color:#94a3b8;"><span id="ui-events-label">顯示中事件：</span><b id="lbl-event-count" style="color:#f97316;">--</b> 筆</span>
         </div>
         <div class="timeline-slider-row">
             <button class="slider-play-btn" id="btn-timeline-play">▶</button>
@@ -148,11 +133,56 @@
 
     <div id="webgl-container"></div>
 
-    <!-- 移除 defer，確保依賴載入順序正確 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
+        // ================= 復原：雙語系翻譯字典 (i18n) =================
+        const i18nDict = {
+            "zh-TW": {
+                title: "全球板塊構造動力學與海嘯擴散平台",
+                subtitle: "USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力應力 · 點擊特寫放大",
+                syncing: "多元資料庫同步中...", synced: "已同步 USGS + EMSC 雙源即時數據",
+                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊動態流", btnStress: "月球引力", btnShare: "🔗 分享視角",
+                toastShare: "已複製專屬分享網址到剪貼簿！",
+                sectionTitle: "📐 構造幾何與震源剖面", webcamTitle: "📹 區域實況 Webcams", newsTitle: "📰 區域地質新聞快訊",
+                timelineLabel: "📅 時序基準：", eventsLabel: "顯示中事件：", allTime: "包含未來預測",
+                badgeReal: "實際發生", badgePredict: "科學預警", badgeTsunami: "海嘯風險",
+                predictPrefix: "[預測]", depthLabel: "深度", shallow: "淺層 (<70km)", intermediate: "中深層 (70-300km)", deep: "超深層 (>300km)"
+            },
+            "en": {
+                title: "Global Tectonic Dynamics & Tsunami Platform",
+                subtitle: "USGS + EMSC Fusion · Plate Vectors · Lunar Stress · Interactive 3D",
+                syncing: "Syncing Multi-Source APIs...", synced: "USGS + EMSC Synced",
+                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Vectors", btnStress: "Lunar Stress", btnShare: "🔗 Share View",
+                toastShare: "View link copied to clipboard!",
+                sectionTitle: "📐 Fault Geometry & Cross-Section", webcamTitle: "📹 Regional Webcams", newsTitle: "📰 Geologic News Feed",
+                timelineLabel: "📅 Timeline: ", eventsLabel: "Active Events: ", allTime: "Includes Forecasts",
+                badgeReal: "Observed", badgePredict: "Forecast", badgeTsunami: "Tsunami Risk",
+                predictPrefix: "[Forecast]", depthLabel: "Depth", shallow: "Shallow (<70km)", intermediate: "Intermediate (70-300km)", deep: "Deep (>300km)"
+            }
+        };
+
+        const userLang = navigator.language.startsWith('zh') ? 'zh-TW' : 'en';
+        const lang = i18nDict[userLang] || i18nDict['en'];
+
+        function applyLanguage() {
+            document.getElementById('ui-title').innerText = lang.title;
+            document.getElementById('ui-subtitle').innerText = lang.subtitle;
+            document.getElementById('sync-status').innerText = lang.syncing;
+            document.getElementById('btn-toggle-nebula').innerText = lang.btnNebula;
+            document.getElementById('btn-toggle-tsunami').innerText = lang.btnTsunami;
+            document.getElementById('btn-toggle-plates').innerText = lang.btnPlates;
+            document.getElementById('btn-toggle-stress').innerText = lang.btnStress;
+            document.getElementById('btn-share-link').innerText = lang.btnShare;
+            document.getElementById('ui-section-title').innerText = lang.sectionTitle;
+            document.getElementById('ui-webcam-title').innerText = lang.webcamTitle;
+            document.getElementById('ui-news-title').innerText = lang.newsTitle;
+            document.getElementById('ui-timeline-label').innerText = lang.timelineLabel;
+            document.getElementById('ui-events-label').innerText = lang.eventsLabel;
+        }
+
+        // ================= 模擬數據庫 =================
         let allEarthquakeData = [
             { id: "p1", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 Q3-Q4", location: "台灣東部外海 (琉球海溝段)", lat: 23.8, lng: 122.5, mag: "M 7.2", depth: 22, dipAngle: 26, isOceanic: true, desc: "菲律賓海板塊向西北隱沒至歐亞板塊下方，滑動赤字累積達 8.0 cm/yr。" },
             { id: "p2", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 下半年", location: "南美洲 中段隱沒帶 (祕魯/智利交界)", lat: -18.5, lng: -70.3, mag: "M 7.5", depth: 35, dipAngle: 22, isOceanic: true, desc: "納斯卡板塊東向低角度俯衝南美陸塊，特大逆衝破裂長週期窗口逼近。" },
@@ -180,13 +210,24 @@
         let markerObjects = [];
         let clickableHitTargets = [];
         
-        // 修正 B：不可以在全域直接呼叫 new THREE，延遲到 init() 內執行
+        // ================= 復原：三大視覺特效層變數 =================
+        let plateVelocityGroup;
+        let stressFieldGroup;
+        let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
+        
         let targetCameraPos;
         let raycaster;
         let mouse;
+        let globalClock = 0;
         
         let currentIndex = -1;
+        
+        // 視覺圖層開關狀態
+        let showNebula = true;
         let showTsunami = true;
+        let showPlates = true;
+        let showStress = true;
+
         let isTimelinePlaying = false;
         let timelineTimer = null;
 
@@ -195,6 +236,7 @@
         const sectionCanvas = document.getElementById('section-canvas');
         const sCtx = sectionCanvas.getContext('2d');
 
+        // 記憶體優化共用池
         const sharedRes = { geo: {}, mat: {}, spriteCache: {} };
 
         function latLngToVector3(lat, lng, radius) {
@@ -220,8 +262,107 @@
             return mat;
         }
 
+        function getDepthVisuals(depth) {
+            if (depth < 70) return { color: 0xef4444, hex: "#ef4444", text: lang.shallow };
+            if (depth <= 300) return { color: 0x06b6d4, hex: "#06b6d4", text: lang.intermediate };
+            return { color: 0xa855f7, hex: "#a855f7", text: lang.deep };
+        }
+
+        // ================= 復原：板塊移動向量箭頭 =================
+        function buildPlateVelocityVectors() {
+            plateVelocityGroup = new THREE.Group();
+            const vectors = [
+                { lat: 24, lng: 122, dir: 310, speed: 8.2, color: 0xef4444 }, // 菲律賓海板塊 -> 歐亞
+                { lat: -18, lng: -72, dir: 80, speed: 6.5, color: 0xeab308 }, // 納斯卡 -> 南美
+                { lat: 35, lng: 141, dir: 280, speed: 9.1, color: 0xef4444 }, // 太平洋 -> 日本
+                { lat: 0, lng: -20, dir: 90, speed: 2.5, color: 0x38bdf8 } // 大西洋洋脊張裂
+            ];
+            vectors.forEach(v => {
+                const headLen = v.speed / 2;
+                const ptOnSurface = latLngToVector3(v.lat, v.lng, RADIUS + 0.5);
+                const dirVec = new THREE.Vector3(1, 0, 0); 
+                const arrowHelper = new THREE.ArrowHelper(dirVec, ptOnSurface, headLen, v.color, headLen * 0.3, headLen * 0.2);
+                plateVelocityGroup.add(arrowHelper);
+            });
+            globeGroup.add(plateVelocityGroup);
+            plateVelocityGroup.visible = showPlates;
+        }
+        
+        // ================= 復原：月球引力應力場 =================
+        function buildLunarStressField() {
+            stressFieldGroup = new THREE.Group();
+            const points = [];
+            for (let lat = -80; lat <= 80; lat += 20) {
+                for (let lng = -180; lng < 180; lng += 20) { points.push(latLngToVector3(lat, lng, RADIUS + 0.2)); }
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.PointsMaterial({ color: 0xa855f7, size: 1.0, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false });
+            stressFieldGroup.add(new THREE.Points(geo, mat));
+            globeGroup.add(stressFieldGroup);
+            stressFieldGroup.visible = showStress;
+        }
+
+        // ================= 復原：光譜應力星雲 (Nebula) =================
+        function buildSpectralNebulaPointCloud() {
+            const stressNebulaCenters = [
+                { lat: 35.0, lng: 140.0, count: 350, radiusDeg: 7.0 }, { lat: 23.5, lng: 122.0, count: 300, radiusDeg: 5.5 },
+                { lat: -8.0, lng: 115.0, count: 350, radiusDeg: 8.0 }, { lat: -20.0, lng: -72.0, count: 300, radiusDeg: 7.0 },
+                { lat: 15.0, lng: -95.0, count: 250, radiusDeg: 6.0 }, { lat: -58.0, lng: -45.0, count: 200, radiusDeg: 7.0 }
+            ];
+
+            let total = 0;
+            stressNebulaCenters.forEach(c => total += c.count);
+            nebulaCount = total;
+
+            const positions = new Float32Array(total * 3);
+            const basePositions = new Float32Array(total * 3);
+            const colors = new Float32Array(total * 3);
+
+            const palette = [ new THREE.Color('#c084fc'), new THREE.Color('#f43f5e'), new THREE.Color('#fb923c'), new THREE.Color('#2dd4bf'), new THREE.Color('#38bdf8') ];
+
+            let pIdx = 0;
+            stressNebulaCenters.forEach(center => {
+                for (let i = 0; i < center.count; i++) {
+                    const u = Math.random(); const v = Math.random();
+                    const r = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+                    const angle = Math.random() * Math.PI * 2;
+                    const dLat = (r * Math.cos(angle)) * (center.radiusDeg * 0.4);
+                    const dLng = (r * Math.sin(angle)) * (center.radiusDeg * 0.4);
+                    const altitude = RADIUS + 0.5 + Math.random() * 2.5;
+
+                    const pos = latLngToVector3(center.lat + dLat, center.lng + dLng, altitude);
+
+                    positions[pIdx * 3] = pos.x; positions[pIdx * 3 + 1] = pos.y; positions[pIdx * 3 + 2] = pos.z;
+                    basePositions[pIdx * 3] = pos.x; basePositions[pIdx * 3 + 1] = pos.y; basePositions[pIdx * 3 + 2] = pos.z;
+
+                    const col = palette[Math.floor(Math.random() * palette.length)].clone();
+                    colors[pIdx * 3] = col.r; colors[pIdx * 3 + 1] = col.g; colors[pIdx * 3 + 2] = col.b;
+                    pIdx++;
+                }
+            });
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            // 星雲專用點陣材質 (復原 Glow Texture 機制)
+            const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)'); grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)'); ctx.fillStyle = grad; ctx.fillRect(0, 0, 64, 64);
+            const tex = new THREE.CanvasTexture(canvas);
+
+            const material = new THREE.PointsMaterial({ size: 1.5, vertexColors: true, map: tex, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.75, depthWrite: false });
+            nebulaPointsMesh = new THREE.Points(geometry, material);
+            nebulaPositions = positions; nebulaBasePositions = basePositions;
+            globeGroup.add(nebulaPointsMesh);
+        }
+
         function init() {
-            // 修正 B：在此初始化 THREE 的物件
+            applyLanguage(); // 套用 i18n
+            document.getElementById('sync-status').innerText = lang.synced;
+
             targetCameraPos = new THREE.Vector3(0, 30, 280); 
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
@@ -252,7 +393,6 @@
                 bumpScale: 1.5, specular: new THREE.Color('#1e293b'), shininess: 15
             });
             globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 48, 48), earthMat));
-            
             globeGroup.add(new THREE.Mesh(new THREE.IcosahedronGeometry(RADIUS * 1.04, 2), new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.16 })));
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.9));
@@ -260,16 +400,21 @@
             dirLight.position.set(200, 100, 200);
             scene.add(dirLight);
 
+            // 建立共用池
             sharedRes.geo.dot = new THREE.SphereGeometry(0.7, 8, 8); 
             sharedRes.geo.ring = new THREE.RingGeometry(1.2, 1.45, 24);
             sharedRes.geo.hit = new THREE.SphereGeometry(3.5, 8, 8);
             sharedRes.geo.tsunami = new THREE.RingGeometry(2.0, 2.5, 32);
-            
             sharedRes.mat.dotReal = new THREE.MeshBasicMaterial({ color: 0xef4444 });
             sharedRes.mat.dotPredict = new THREE.MeshBasicMaterial({ color: 0xeab308 });
             sharedRes.mat.hit = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
             sharedRes.mat.lineReal = new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
             sharedRes.mat.linePredict = new THREE.LineBasicMaterial({ color: 0xeab308, transparent: true, opacity: 0.7 });
+
+            // 復原：初始化視覺層
+            buildSpectralNebulaPointCloud();
+            buildPlateVelocityVectors();
+            buildLunarStressField();
 
             rebuildMarkersAndControls();
 
@@ -333,7 +478,7 @@
             });
 
             document.getElementById('lbl-event-count').innerText = visibleCount;
-            const dateStr = percentage >= 100 ? "包含未來預測" : new Date(cutoffTime).toISOString().split('T')[0];
+            const dateStr = percentage >= 100 ? lang.allTime : new Date(cutoffTime).toISOString().split('T')[0];
             document.getElementById('lbl-timeline-date').innerText = dateStr;
         }
 
@@ -379,7 +524,7 @@
                 const btn = document.createElement('button');
                 btn.className = `btn-step ${isPredict ? 'predict-btn' : ''}`;
                 btn.id = `btn-step-${idx}`;
-                btn.innerText = `${idx + 1}. ${isPredict ? '[預測]' : ''}${eq.location.split(' ')[0]}`;
+                btn.innerText = `${idx + 1}. ${isPredict ? lang.predictPrefix : ''}${eq.location.split(' ')[0]}`;
                 btn.onclick = () => focusEvent(idx);
                 bar.appendChild(btn);
             });
@@ -405,7 +550,6 @@
             sCtx.beginPath(); sCtx.arc(fx, Math.min(fy, h-20), 4, 0, Math.PI*2); sCtx.fill();
 
             document.getElementById('hud-subduction-angle').innerText = `傾角: ${data.dipAngle || 28}°`;
-            document.getElementById('hud-section-note').innerText = data.desc;
         }
 
         function populateList(containerId, dataArray, icon) {
@@ -438,12 +582,15 @@
 
             const bdg = document.getElementById('c-badge');
             bdg.className = `badge-type ${target.data.type === 'predict' ? 'predict' : 'real'}`;
-            bdg.innerText = target.data.type === 'predict' ? '科學預警' : '實際發生';
+            bdg.innerText = target.data.type === 'predict' ? lang.badgePredict : lang.badgeReal;
+
+            const depthInfo = getDepthVisuals(target.data.depth);
+            const dBdg = document.getElementById('c-depth-badge');
+            dBdg.innerText = depthInfo.text; dBdg.style.backgroundColor = depthInfo.hex;
 
             document.getElementById('c-title').innerText = target.data.location;
             document.getElementById('c-date').innerText = target.data.date;
             document.getElementById('c-mag').innerText = target.data.mag;
-            document.getElementById('c-depth').innerText = `深度 ${target.data.depth} km`;
             document.getElementById('c-desc').innerText = target.data.desc;
             
             dialogCard.style.display = 'block';
@@ -457,6 +604,7 @@
             document.getElementById('btn-toggle-sidebar').innerText = '▶';
         }
 
+        // ================= 復原：綁定所有視圖切換按鈕 =================
         function setupUIEventListeners() {
             document.getElementById('timeline-slider').oninput = (e) => {
                 clearInterval(timelineTimer); isTimelinePlaying = false; document.getElementById('btn-timeline-play').innerText = '▶';
@@ -478,6 +626,30 @@
                 sidebar.classList.toggle('collapsed');
                 this.innerText = sidebar.classList.contains('collapsed') ? '◀' : '▶';
             };
+
+            // 復原控制按鈕事件
+            document.getElementById('btn-toggle-nebula').onclick = function() {
+                showNebula = !showNebula; this.classList.toggle('active', showNebula);
+                if(nebulaPointsMesh) nebulaPointsMesh.visible = showNebula;
+            };
+            document.getElementById('btn-toggle-tsunami').onclick = function() {
+                showTsunami = !showTsunami; this.classList.toggle('active', showTsunami);
+                filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
+            };
+            document.getElementById('btn-toggle-plates').onclick = function() {
+                showPlates = !showPlates; this.classList.toggle('active', showPlates);
+                if(plateVelocityGroup) plateVelocityGroup.visible = showPlates;
+            };
+            document.getElementById('btn-toggle-stress').onclick = function() {
+                showStress = !showStress; this.classList.toggle('active', showStress);
+                if(stressFieldGroup) stressFieldGroup.visible = showStress;
+            };
+            document.getElementById('btn-share-link').onclick = () => {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    const toast = document.getElementById('share-toast');
+                    toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', 2200);
+                });
+            };
         }
 
         function updateDialogPosition() {
@@ -492,6 +664,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            globalClock += 0.03;
 
             camera.position.lerp(targetCameraPos, 0.04);
             controls.update(); 
@@ -513,11 +686,23 @@
                 });
             });
 
+            // 復原：讓應力星雲持續律動
+            if (showNebula && nebulaPointsMesh && nebulaPositions) {
+                for (let i = 0; i < nebulaCount; i++) {
+                    const i3 = i * 3;
+                    const bx = nebulaBasePositions[i3], by = nebulaBasePositions[i3 + 1], bz = nebulaBasePositions[i3 + 2];
+                    const noise = Math.sin(globalClock * 1.5 + i * 0.1) * 0.4;
+                    nebulaPositions[i3] = bx + (bx / RADIUS) * noise;
+                    nebulaPositions[i3 + 1] = by + (by / RADIUS) * noise;
+                    nebulaPositions[i3 + 2] = bz + (bz / RADIUS) * noise;
+                }
+                nebulaPointsMesh.geometry.attributes.position.needsUpdate = true;
+            }
+
             updateDialogPosition();
             renderer.render(scene, camera);
         }
 
-        // 確保 DOM 載入後再執行
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
