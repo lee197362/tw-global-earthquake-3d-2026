@@ -121,10 +121,10 @@
             <div class="module-card">
                 <div class="module-header"><span id="ui-layer-title">🎛️ 視覺圖層控制面板</span></div>
                 <div class="layer-controls">
-                    <!-- 預設移除 active 樣式 -->
+                    <!-- V12: 預設全部關閉 -->
                     <button class="btn-mode" id="btn-toggle-nebula">應力星雲</button>
                     <button class="btn-mode" id="btn-toggle-tsunami">海嘯波前</button>
-                    <button class="btn-mode" id="btn-toggle-plates">板塊邊界</button>
+                    <button class="btn-mode" id="btn-toggle-plates">板塊動態流</button>
                     <button class="btn-mode" id="btn-toggle-stress">月球引力</button>
                     <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
                 </div>
@@ -182,7 +182,7 @@
                 subtitle: "USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力動態牽引",
                 syncing: "多元資料庫同步中...", synced: "已同步 USGS + EMSC 雙源即時數據",
                 infoTitle: "📍 事件詳細資訊", layerTitle: "🎛️ 視覺圖層控制面板",
-                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊邊界", btnStress: "月球引力", btnShare: "🔗 分享視角",
+                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊動態流", btnStress: "月球引力", btnShare: "🔗 分享視角",
                 toastShare: "已複製專屬分享網址到剪貼簿！",
                 sectionTitle: "📐 構造幾何與震源剖面", webcamTitle: "📹 區域實況 Webcams", newsTitle: "📰 區域地質新聞快訊",
                 timelineLabel: "📅 時序基準：", eventsLabel: "顯示中事件：", allTime: "全部時間",
@@ -194,7 +194,7 @@
                 subtitle: "USGS + EMSC Fusion · Plate Boundaries · Tidal Stress Pull",
                 syncing: "Syncing Multi-Source APIs...", synced: "USGS + EMSC Synced",
                 infoTitle: "📍 Event Details", layerTitle: "🎛️ Visual Layers Control",
-                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Bounds", btnStress: "Lunar Pull", btnShare: "🔗 Share View",
+                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Vectors", btnStress: "Lunar Pull", btnShare: "🔗 Share View",
                 toastShare: "View link copied to clipboard!",
                 sectionTitle: "📐 Fault Geometry & Cross-Section", webcamTitle: "📹 Regional Webcams", newsTitle: "📰 Geologic News Feed",
                 timelineLabel: "📅 Timeline: ", eventsLabel: "Active Events: ", allTime: "All Time",
@@ -206,7 +206,7 @@
                 subtitle: "USGS + EMSC マルチソース同期 · 月の引力シミュレーション",
                 syncing: "マルチソース同期中...", synced: "USGS + EMSC 同期完了",
                 infoTitle: "📍 イベント詳細情報", layerTitle: "🎛️ 視覚レイヤー制御",
-                btnNebula: "応力星雲", btnTsunami: "津波シミュ", btnPlates: "プレート境界", btnStress: "月の引力", btnShare: "🔗 視点共有",
+                btnNebula: "応力星雲", btnTsunami: "津波シミュ", btnPlates: "プレート動態流", btnStress: "月の引力", btnShare: "🔗 視点共有",
                 toastShare: "共有リンクをコピーしました！",
                 sectionTitle: "📐 断層構造・震源断面", webcamTitle: "📹 地域ライブカメラ", newsTitle: "📰 地質ニュース",
                 timelineLabel: "📅 タイムライン：", eventsLabel: "表示イベント：", allTime: "全期間",
@@ -240,7 +240,7 @@
             { id: "p2", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 下半年", location: "南美洲 中段隱沒帶 (祕魯/智利交界)", lat: -18.5, lng: -70.3, mag: "M 7.5", depth: 35, dipAngle: 22, isOceanic: true, desc: "納斯卡板塊東向低角度俯衝南美陸塊，特大逆衝破裂長週期窗口逼近。" },
             { id: "r1", type: "real", timestamp: new Date("2026-06-07").getTime(), date: "2026/06/07", location: "菲律賓 棉蘭老島西南外海", lat: 5.92, lng: 124.95, mag: "M 7.8", depth: 57, dipAngle: 38, isOceanic: true, desc: "哥塔巴托海溝板塊交界面逆衝破裂，具備中等海嘯波前傳播特性。" },
             { id: "r2", type: "real", timestamp: new Date("2026-08-14").getTime(), date: "2026/08/14", location: "印尼 弗洛勒斯海", lat: -7.60, lng: 121.90, mag: "M 7.7", depth: 10, dipAngle: 32, isOceanic: true, desc: "弗洛勒斯後弧逆衝帶淺層極強破裂，引發顯著局部海嘯波擴散。" },
-            { id: "r3", type: "real", timestamp: new Date("2026-08-20").getTime(), date: "2026/08/20", location: "日本 本州東海岸附近海域", lat: 37.5, lng: 142.1, mag: "M 6.5", depth: 40, dipAngle: 30, isOceanic: true, desc: "太平洋板塊隱沒帶中等規模破裂，無明顯海嘯威脅。" }
+            { id: "r3", type: "real", timestamp: new Date("2026-08-20").getTime(), date: "2026/08/20", location: "日本 本州東海岸附近海域", lat: 37.5, lng: 142.1, mag: "M 6.5", depth: 40, dipAngle: 30, isOceanic: true, desc: "太平洋板塊隱没帶中等規模破裂，無明顯海嘯威脅。" }
         ];
         
         const mockWebcamData = {
@@ -277,7 +277,7 @@
         
         let currentIndex = -1;
         
-        // 變更預設狀態為 false，載入時畫面更乾淨
+        // V12: 確保載入時只有地球與資料點，關閉所有特效圖層
         let showNebula = false;
         let showTsunami = false;
         let showPlates = false;
@@ -321,6 +321,37 @@
             return { color: 0xa855f7, hex: "#a855f7", text: lang.deep };
         }
 
+        // V12: 動態推擠向量箭頭
+        function buildDynamicPlateVectors() {
+            if (!plateLinesGroup) return;
+            const vectors = [
+                { lat: 23.5, lng: 122.5, dir: 310, speed: 8.0, color: 0xef4444 }, 
+                { lat: -18.0, lng: -70.0, dir: 80, speed: 6.5, color: 0xeab308 }, 
+                { lat: 38.0, lng: 142.0, dir: 290, speed: 9.0, color: 0xef4444 }, 
+                { lat: -6.0, lng: 105.0, dir: 20, speed: 7.0, color: 0xeab308 }   
+            ];
+
+            vectors.forEach(v => {
+                const headLen = v.speed * 0.8;
+                const ptOnSurface = latLngToVector3(v.lat, v.lng, RADIUS + 0.5);
+                
+                const surfaceNormal = ptOnSurface.clone().normalize();
+                const north = new THREE.Vector3(0, 1, 0).projectOnPlane(surfaceNormal).normalize();
+                const east = new THREE.Vector3().crossVectors(north, surfaceNormal).normalize();
+                
+                const rad = v.dir * (Math.PI / 180);
+                const dirVec = new THREE.Vector3()
+                    .addScaledVector(north, Math.cos(rad))
+                    .addScaledVector(east, Math.sin(rad))
+                    .normalize();
+
+                const arrowHelper = new THREE.ArrowHelper(dirVec, ptOnSurface, headLen, v.color, headLen * 0.4, headLen * 0.3);
+                arrowHelper.userData = { baseLength: headLen }; 
+                
+                plateLinesGroup.add(arrowHelper);
+            });
+        }
+
         function loadTectonicPlates() {
             plateLinesGroup = new THREE.Group();
             fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
@@ -339,6 +370,9 @@
                     });
                     globeGroup.add(plateLinesGroup);
                     plateLinesGroup.visible = showPlates;
+                    
+                    // V12: 新增推擠向量箭頭
+                    buildDynamicPlateVectors();
                 })
                 .catch(err => console.log('Plate data error:', err));
         }
@@ -731,9 +765,21 @@
             
             dataArray.forEach(item => {
                 const isOnline = item.status === "online";
+                
+                // 動態組合搜尋字串，強制加入地質/地震相關的 Context
+                let searchQuery = item.title;
+                if (type === 'webcam') {
+                    searchQuery += lang.title.includes('全球') ? ' 監視器 live' : ' live cam';
+                } else if (type === 'news') {
+                    // 若是新聞，強制加上 "地震 OR 地質" 以避免搜到股票市場的"板塊"
+                    const fallbackContext = lang.title.includes('全球') ? ' 地震 OR 地質' : ' earthquake';
+                    const locContext = eventLocation ? ` ${eventLocation} ` : ' ';
+                    searchQuery += locContext + fallbackContext;
+                }
+
                 const searchUrl = type === 'webcam' 
-                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}+live` 
-                    : `https://news.google.com/search?q=${encodeURIComponent(item.title)}`;
+                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}` 
+                    : `https://news.google.com/search?q=${encodeURIComponent(searchQuery)}`;
                 
                 el.innerHTML += `
                     <a href="${searchUrl}" target="_blank" style="text-decoration: none; display: block;" class="info-list-item hover-effect">
@@ -789,7 +835,7 @@
             drawCrossSection(target.data);
             
             const locKey = getRegionKey(target.data.location); 
-            const cleanLocation = target.data.location.split(' ')[0];
+            const cleanLocation = target.data.location.split(' ')[0]; // 擷取地點主詞 (如 "台灣東部外海")
             populateList('webcam-list', mockWebcamData[locKey], '📹', 'webcam', cleanLocation);
             populateList('news-list', mockNewsData[locKey], '📰', 'news', cleanLocation);
             
@@ -893,7 +939,7 @@
                     const bx = basePositions.getX(i), by = basePositions.getY(i), bz = basePositions.getZ(i);
                     const pt = new THREE.Vector3(bx, by, bz);
                     const dot = Math.abs(pt.clone().normalize().dot(moonVec));
-                    const bulge = Math.pow(dot, 2) * 5.0; 
+                    const bulge = Math.pow(dot, 2) * 5.0; // 模擬引力突起
                     pt.setLength(RADIUS + 0.2 + bulge);
                     positions.setXYZ(i, pt.x, pt.y, pt.z);
                 }
