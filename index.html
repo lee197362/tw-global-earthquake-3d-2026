@@ -14,15 +14,36 @@
         .header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
         .sync-badge { display: inline-block; margin-top: 6px; font-size: 11px; color: #4ade80; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3); }
 
-        .view-controls { position: absolute; top: 20px; right: 24px; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 500px; }
-        .btn-mode { background: rgba(15, 23, 42, 0.85); color: #cbd5e1; border: 1px solid rgba(56, 189, 248, 0.3); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-        .btn-mode.active, .btn-mode:hover { background: #0284c7; color: #fff; border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
-
-        /* 右側浮動面板 (UI 優化保留) */
-        #right-sidebar { position: absolute; top: 70px; right: 0; width: 340px; height: calc(100vh - 170px); background: rgba(15, 23, 42, 0.92); border-left: 1px solid rgba(56, 189, 248, 0.4); border-top: 1px solid rgba(56, 189, 248, 0.4); border-bottom: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px 0 0 12px; backdrop-filter: blur(12px); z-index: 15; display: flex; flex-direction: column; transform: translateX(0); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 25px rgba(0,0,0,0.6); }
+        /* 右側浮動面板 (包含所有控制項) */
+        #right-sidebar { 
+            position: absolute; top: 70px; right: 0; width: 340px; height: calc(100vh - 170px); 
+            background: rgba(15, 23, 42, 0.92); border-left: 1px solid rgba(56, 189, 248, 0.4); 
+            border-top: 1px solid rgba(56, 189, 248, 0.4); border-bottom: 1px solid rgba(56, 189, 248, 0.4); 
+            border-radius: 12px 0 0 12px; backdrop-filter: blur(12px); z-index: 15; 
+            display: flex; flex-direction: column; transform: translateX(0); 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 25px rgba(0,0,0,0.6); 
+        }
+        /* 預設收合狀態 */
         #right-sidebar.collapsed { transform: translateX(340px); }
-        .sidebar-toggle-btn { position: absolute; left: -24px; top: 50%; transform: translateY(-50%); width: 24px; height: 60px; background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(56, 189, 248, 0.4); border-right: none; border-radius: 8px 0 0 8px; color: #38bdf8; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: -5px 0 10px rgba(0,0,0,0.3); }
-        .sidebar-toggle-btn:hover { background: rgba(30, 41, 59, 0.95); }
+        
+        .sidebar-toggle-btn { 
+            position: absolute; left: -28px; top: 50%; transform: translateY(-50%); 
+            width: 28px; height: 70px; background: rgba(15, 23, 42, 0.95); 
+            border: 1px solid #38bdf8; border-right: none; border-radius: 12px 0 0 12px; 
+            color: #38bdf8; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: -5px 0 15px rgba(0,0,0,0.5); 
+            transition: all 0.3s ease;
+        }
+        .sidebar-toggle-btn:hover { background: #0284c7; color: #fff; }
+        
+        /* 引導動畫：脈衝發光 */
+        .pulse-animation { animation: pulse 1.5s infinite; border-color: #f97316; color: #f97316; }
+        @keyframes pulse {
+            0% { box-shadow: -5px 0 10px rgba(249, 115, 22, 0.2); }
+            50% { box-shadow: -5px 0 25px rgba(249, 115, 22, 0.9); }
+            100% { box-shadow: -5px 0 10px rgba(249, 115, 22, 0.2); }
+        }
+
         .sidebar-content { padding: 16px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 16px; }
         .sidebar-content::-webkit-scrollbar { width: 4px; }
         .sidebar-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
@@ -30,9 +51,18 @@
 
         .module-card { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; }
         .module-header { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; }
+        
+        /* 將按鈕移入面板 */
+        .layer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-mode { background: rgba(15, 23, 42, 0.85); color: #cbd5e1; border: 1px solid rgba(56, 189, 248, 0.3); backdrop-filter: blur(8px); padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-grow: 1; text-align: center;}
+        .btn-mode.active, .btn-mode:hover { background: #0284c7; color: #fff; border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+
         #section-canvas { width: 100%; height: 140px; background: #090d16; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
-        .info-list-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #cbd5e1; }
+        
+        /* 連結樣式優化 */
+        .info-list-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #cbd5e1; transition: background 0.2s; padding: 6px; border-radius: 4px; }
         .info-list-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .info-list-item.hover-effect:hover { background: rgba(56, 189, 248, 0.1); cursor: pointer; }
         .info-item-title { color: #fff; font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
         .info-item-meta { color: #94a3b8; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
         .status-tag { padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; }
@@ -73,20 +103,28 @@
 
     <div class="header">
         <h1 id="ui-title">全球板塊構造動力學與海嘯擴散平台</h1>
-        <p id="ui-subtitle">USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力應力 · 點擊特寫放大</p>
+        <p id="ui-subtitle">USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力牽引 · 點擊特寫放大</p>
         <div class="sync-badge" id="sync-status">多元即時資料連線中...</div>
     </div>
 
-    <div class="view-controls">
-        <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
-        <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前</button>
-        <button class="btn-mode active" id="btn-toggle-plates">板塊邊界</button>
-        <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
-    </div>
-
-    <div id="right-sidebar">
-        <div class="sidebar-toggle-btn" id="btn-toggle-sidebar">▶</div>
+    <!-- 預設加入 collapsed 類別，隱藏面板 -->
+    <div id="right-sidebar" class="collapsed">
+        <div class="sidebar-toggle-btn pulse-animation" id="btn-toggle-sidebar" title="點擊展開功能選單">◀ 展開</div>
         <div class="sidebar-content">
+            
+            <!-- 模組：視覺圖層控制 (移入側邊欄) -->
+            <div class="module-card">
+                <div class="module-header"><span id="ui-layer-title">🎛️ 視覺圖層控制面板</span></div>
+                <div class="layer-controls">
+                    <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
+                    <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前</button>
+                    <button class="btn-mode active" id="btn-toggle-plates">板塊邊界</button>
+                    <button class="btn-mode active" id="btn-toggle-stress">月球引力</button>
+                    <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
+                </div>
+            </div>
+
+            <!-- 模組：構造幾何與震源剖面 -->
             <div class="module-card">
                 <div class="module-header">
                     <span id="ui-section-title">📐 構造幾何與震源剖面</span>
@@ -97,10 +135,14 @@
                     請點選左側 3D 地球上的地震事件，以即時演算板塊界面應力與震源破裂機制。
                 </div>
             </div>
+            
+            <!-- 模組：Webcams -->
             <div class="module-card">
                 <div class="module-header"><span id="ui-webcam-title">📹 區域實況 Webcams</span></div>
                 <div id="webcam-list"><div class="empty-text">尚無選定區域之影像訊號...</div></div>
             </div>
+
+            <!-- 模組：News -->
             <div class="module-card">
                 <div class="module-header"><span id="ui-news-title">📰 區域地質新聞快訊</span></div>
                 <div id="news-list"><div class="empty-text">尚無選定區域之新聞資訊...</div></div>
@@ -135,12 +177,19 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
+        // 自動偵測語系機制優化 (結合 navigator 與 timezone)
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let inferredLang = navigator.language.startsWith('zh') ? 'zh-TW' : (navigator.language.startsWith('ja') ? 'ja' : 'en');
+        if (tz === 'Asia/Taipei') inferredLang = 'zh-TW';
+        if (tz === 'Asia/Tokyo') inferredLang = 'ja';
+
         const i18nDict = {
             "zh-TW": {
                 title: "全球板塊構造動力學與海嘯擴散平台",
-                subtitle: "USGS + EMSC 多來源即時融合 · 板塊邊界 · 應力星雲 · 點擊特寫放大",
+                subtitle: "USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力動態牽引",
                 syncing: "多元資料庫同步中...", synced: "已同步 USGS + EMSC 雙源即時數據",
-                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊邊界", btnShare: "🔗 分享視角",
+                layerTitle: "🎛️ 視覺圖層控制面板",
+                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊邊界", btnStress: "月球引力", btnShare: "🔗 分享視角",
                 toastShare: "已複製專屬分享網址到剪貼簿！",
                 sectionTitle: "📐 構造幾何與震源剖面", webcamTitle: "📹 區域實況 Webcams", newsTitle: "📰 區域地質新聞快訊",
                 timelineLabel: "📅 時序基準：", eventsLabel: "顯示中事件：", allTime: "全部時間",
@@ -149,27 +198,41 @@
             },
             "en": {
                 title: "Global Tectonic Dynamics & Tsunami Platform",
-                subtitle: "USGS + EMSC Fusion · Plate Boundaries · Nebula · Interactive 3D",
+                subtitle: "USGS + EMSC Fusion · Plate Boundaries · Tidal Stress Pull",
                 syncing: "Syncing Multi-Source APIs...", synced: "USGS + EMSC Synced",
-                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Boundaries", btnShare: "🔗 Share View",
+                layerTitle: "🎛️ Visual Layers Control",
+                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Bounds", btnStress: "Lunar Pull", btnShare: "🔗 Share View",
                 toastShare: "View link copied to clipboard!",
                 sectionTitle: "📐 Fault Geometry & Cross-Section", webcamTitle: "📹 Regional Webcams", newsTitle: "📰 Geologic News Feed",
                 timelineLabel: "📅 Timeline: ", eventsLabel: "Active Events: ", allTime: "All Time",
                 badgeReal: "Observed", badgePredict: "Forecast", badgeTsunami: "Tsunami Risk",
                 predictPrefix: "[Forecast]", depthLabel: "Depth", shallow: "Shallow (<70km)", intermediate: "Intermediate (70-300km)", deep: "Deep (>300km)"
+            },
+            "ja": {
+                title: "全球プレートダイナミクス・リアルタイム地震監視",
+                subtitle: "USGS + EMSC マルチソース同期 · 月の引力シミュレーション",
+                syncing: "マルチソース同期中...", synced: "USGS + EMSC 同期完了",
+                layerTitle: "🎛️ 視覚レイヤー制御",
+                btnNebula: "応力星雲", btnTsunami: "津波シミュ", btnPlates: "プレート境界", btnStress: "月の引力", btnShare: "🔗 視点共有",
+                toastShare: "共有リンクをコピーしました！",
+                sectionTitle: "📐 断層構造・震源断面", webcamTitle: "📹 地域ライブカメラ", newsTitle: "📰 地質ニュース",
+                timelineLabel: "📅 タイムライン：", eventsLabel: "表示イベント：", allTime: "全期間",
+                badgeReal: "観測地震", badgePredict: "予測エリア", badgeTsunami: "津波注意",
+                predictPrefix: "[予測]", depthLabel: "深さ", shallow: "浅発 (<70km)", intermediate: "中発 (70-300km)", deep: "深発 (>300km)"
             }
         };
 
-        const userLang = navigator.language.startsWith('zh') ? 'zh-TW' : 'en';
-        const lang = i18nDict[userLang] || i18nDict['en'];
+        const lang = i18nDict[inferredLang] || i18nDict['en'];
 
         function applyLanguage() {
             document.getElementById('ui-title').innerText = lang.title;
             document.getElementById('ui-subtitle').innerText = lang.subtitle;
             document.getElementById('sync-status').innerText = lang.syncing;
+            document.getElementById('ui-layer-title').innerText = lang.layerTitle;
             document.getElementById('btn-toggle-nebula').innerText = lang.btnNebula;
             document.getElementById('btn-toggle-tsunami').innerText = lang.btnTsunami;
             document.getElementById('btn-toggle-plates').innerText = lang.btnPlates;
+            document.getElementById('btn-toggle-stress').innerText = lang.btnStress;
             document.getElementById('btn-share-link').innerText = lang.btnShare;
             document.getElementById('ui-section-title').innerText = lang.sectionTitle;
             document.getElementById('ui-webcam-title').innerText = lang.webcamTitle;
@@ -188,8 +251,9 @@
         
         const mockWebcamData = {
             "taiwan": [ { title: "宜蘭南方澳漁港", type: "海洋監測", status: "online", time: "即時" }, { title: "花蓮港海務觀測", type: "氣象監測", status: "online", time: "1分鐘前" } ],
-            "southamerica": [ { title: "Arica Port Cam 1", type: "Port Auth", status: "online", time: "即時" }, { title: "Iquique Tsunami Buoy", type: "SHOA", status: "online", time: "5分鐘前" } ],
+            "southamerica": [ { title: "Arica Port", type: "Port Auth", status: "online", time: "即時" }, { title: "Iquique Tsunami Buoy", type: "SHOA", status: "online", time: "5分鐘前" } ],
             "indonesia": [ { title: "Maumere Harbor E", type: "BMKG", status: "online", time: "即時" }, { title: "Flores Sea Buoy", type: "InaTEWS", status: "online", time: "即時" } ],
+            "japan": [ { title: "福島港", type: "JMA", status: "online", time: "即時" }, { title: "東京湾", type: "海洋観測", status: "online", time: "即時" } ],
             "default": [ { title: "全球公用觀測站", type: "衛星觀測", status: "archive", time: "1小時前" } ]
         };
         
@@ -197,6 +261,7 @@
             "taiwan": [ { title: "東部外海板塊交界處微震頻繁", media: "中央通訊社", time: "2小時前" } ],
             "southamerica": [ { title: "Peru-Chile Trench seismic gap monitoring", media: "Geology Today", time: "12小時前" } ],
             "indonesia": [ { title: "Flores thrust displacement warning issued", media: "BMKG Reports", time: "6小時前" } ],
+            "japan": [ { title: "太平洋プレート沈み込み帯でひずみ蓄積", media: "NHK", time: "3時間前" } ],
             "default": [ { title: "近期板塊活動綜述", media: "USGS", time: "1天前" } ]
         };
 
@@ -207,16 +272,19 @@
         
         let plateLinesGroup;
         let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
+        let stressFieldGroup;
         
         let targetCameraPos;
         let raycaster;
         let mouse;
         let globalClock = 0;
+        let moonAngle = 0; // 用於月球引力動畫
         
         let currentIndex = -1;
         let showNebula = true;
         let showTsunami = true;
         let showPlates = true;
+        let showStress = true;
         let isTimelinePlaying = false;
         let timelineTimer = null;
 
@@ -276,6 +344,32 @@
                     plateLinesGroup.visible = showPlates;
                 })
                 .catch(err => console.log('Plate data error:', err));
+        }
+
+        // 月球引力動態牽引動畫 (Tidal Bulge)
+        function buildLunarStressField() {
+            stressFieldGroup = new THREE.Group();
+            const points = [];
+            for (let lat = -80; lat <= 80; lat += 15) {
+                for (let lng = -180; lng < 180; lng += 15) { 
+                    points.push(latLngToVector3(lat, lng, RADIUS + 0.2)); 
+                }
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            // 儲存原始位置供動畫使用
+            geo.setAttribute('basePosition', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.array), 3));
+            
+            const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            grad.addColorStop(0, 'rgba(168, 85, 247, 1)'); grad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 32, 32);
+            
+            const mat = new THREE.PointsMaterial({ color: 0xd8b4fe, size: 3.5, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, map: new THREE.CanvasTexture(canvas) });
+            const mesh = new THREE.Points(geo, mat);
+            stressFieldGroup.add(mesh);
+            globeGroup.add(stressFieldGroup);
+            stressFieldGroup.visible = showStress;
         }
 
         function buildSpectralNebulaPointCloud() {
@@ -454,6 +548,7 @@
 
             loadTectonicPlates();
             buildSpectralNebulaPointCloud();
+            buildLunarStressField(); // 啟動月球引力層
             rebuildMarkersAndControls();
 
             refreshMultiSourceData();
@@ -623,21 +718,36 @@
             document.getElementById('hud-subduction-angle').innerText = `Dip: ${data.dipAngle || 28}°`;
         }
 
-        function populateList(containerId, dataArray, icon) {
+        // 智慧配對區域 (修正 Webcams / News 無法顯示的問題)
+        function getRegionKey(locString) {
+            if (locString.includes('台灣') || locString.includes('琉球')) return 'taiwan';
+            if (locString.includes('南美') || locString.includes('智利') || locString.includes('祕魯') || locString.includes('哥倫比亞')) return 'southamerica';
+            if (locString.includes('印尼') || locString.includes('菲律賓')) return 'indonesia';
+            if (locString.includes('日本')) return 'japan';
+            return 'default';
+        }
+
+        // 動態生成可點擊連結 (Clickable Hyperlinks)
+        function populateList(containerId, dataArray, icon, type) {
             const el = document.getElementById(containerId);
             el.innerHTML = '';
             if(!dataArray || dataArray.length === 0) { el.innerHTML = `<div class="empty-text">尚無區域資料...</div>`; return; }
             
             dataArray.forEach(item => {
                 const isOnline = item.status === "online";
+                // webcam 使用 Youtube 搜尋，news 使用 Google News 搜尋
+                const searchUrl = type === 'webcam' 
+                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}+live` 
+                    : `https://news.google.com/search?q=${encodeURIComponent(item.title)}`;
+                
                 el.innerHTML += `
-                    <div class="info-list-item">
-                        <div class="info-item-title"><span>${icon}</span><span>${item.title}</span></div>
+                    <a href="${searchUrl}" target="_blank" style="text-decoration: none; display: block;" class="info-list-item hover-effect">
+                        <div class="info-item-title"><span>${icon}</span><span style="color: #38bdf8; text-decoration: underline;">${item.title}</span></div>
                         <div class="info-item-meta">
                             <span>${item.type || item.media}</span>
                             <span>${item.status ? `<span class="status-tag ${isOnline ? 'status-online' : 'status-archive'}">${isOnline ? 'LIVE' : 'ARCHIVE'}</span> ` : ''}${item.time}</span>
                         </div>
-                    </div>`;
+                    </a>`;
             });
         }
 
@@ -681,12 +791,16 @@
             dialogCard.style.display = 'block';
 
             drawCrossSection(target.data);
-            const locKey = target.data.location.substring(0, 3); 
-            populateList('webcam-list', mockWebcamData[locKey] || mockWebcamData['default'], '📹');
-            populateList('news-list', mockNewsData[locKey] || mockNewsData['default'], '📰');
+            
+            // 透過地理關鍵字智能配對 Webcam/News
+            const locKey = getRegionKey(target.data.location); 
+            populateList('webcam-list', mockWebcamData[locKey], '📹', 'webcam');
+            populateList('news-list', mockNewsData[locKey], '📰', 'news');
             
             document.getElementById('right-sidebar').classList.remove('collapsed');
-            document.getElementById('btn-toggle-sidebar').innerText = '▶';
+            const toggleBtn = document.getElementById('btn-toggle-sidebar');
+            toggleBtn.innerText = '▶ 收起';
+            toggleBtn.classList.remove('pulse-animation'); // 點擊後移除引導動畫
         }
 
         function setupUIEventListeners() {
@@ -708,7 +822,8 @@
             document.getElementById('btn-toggle-sidebar').onclick = function() {
                 const sidebar = document.getElementById('right-sidebar');
                 sidebar.classList.toggle('collapsed');
-                this.innerText = sidebar.classList.contains('collapsed') ? '◀' : '▶';
+                this.classList.remove('pulse-animation'); // 點擊後移除引導動畫
+                this.innerText = sidebar.classList.contains('collapsed') ? '◀ 展開' : '▶ 收起';
             };
 
             document.getElementById('btn-toggle-nebula').onclick = function() {
@@ -722,6 +837,10 @@
             document.getElementById('btn-toggle-plates').onclick = function() {
                 showPlates = !showPlates; this.classList.toggle('active', showPlates);
                 if(plateLinesGroup) plateLinesGroup.visible = showPlates;
+            };
+            document.getElementById('btn-toggle-stress').onclick = function() {
+                showStress = !showStress; this.classList.toggle('active', showStress);
+                if(stressFieldGroup) stressFieldGroup.visible = showStress;
             };
             document.getElementById('btn-share-link').onclick = () => {
                 navigator.clipboard.writeText(window.location.href).then(() => {
@@ -775,6 +894,23 @@
                     nebulaPositions[i3 + 2] = bz + (bz / RADIUS) * noise;
                 }
                 nebulaPointsMesh.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // 動態月球引力計算 (Tidal Bulge Effect)
+            if (showStress && stressFieldGroup) {
+                moonAngle += 0.01;
+                const moonVec = new THREE.Vector3(Math.cos(moonAngle), 0, Math.sin(moonAngle)).normalize();
+                const positions = stressFieldGroup.children[0].geometry.attributes.position;
+                const basePositions = stressFieldGroup.children[0].geometry.attributes.basePosition;
+                for(let i = 0; i < positions.count; i++) {
+                    const bx = basePositions.getX(i), by = basePositions.getY(i), bz = basePositions.getZ(i);
+                    const pt = new THREE.Vector3(bx, by, bz);
+                    const dot = Math.abs(pt.clone().normalize().dot(moonVec));
+                    const bulge = Math.pow(dot, 2) * 5.0; // 模擬引力突起
+                    pt.setLength(RADIUS + 0.2 + bulge);
+                    positions.setXYZ(i, pt.x, pt.y, pt.z);
+                }
+                positions.needsUpdate = true;
             }
 
             updateDialogPosition();
