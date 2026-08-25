@@ -14,7 +14,7 @@
         .header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
         .sync-badge { display: inline-block; margin-top: 6px; font-size: 11px; color: #4ade80; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3); }
 
-        /* 右側浮動面板 (包含所有控制項) */
+        /* 右側浮動面板 (筆記本式設計) */
         #right-sidebar { 
             position: absolute; top: 70px; right: 0; width: 340px; height: calc(100vh - 170px); 
             background: rgba(15, 23, 42, 0.92); border-left: 1px solid rgba(56, 189, 248, 0.4); 
@@ -23,7 +23,6 @@
             display: flex; flex-direction: column; transform: translateX(0); 
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 25px rgba(0,0,0,0.6); 
         }
-        /* 預設收合狀態 */
         #right-sidebar.collapsed { transform: translateX(340px); }
         
         .sidebar-toggle-btn { 
@@ -36,7 +35,6 @@
         }
         .sidebar-toggle-btn:hover { background: #0284c7; color: #fff; }
         
-        /* 引導動畫：脈衝發光 */
         .pulse-animation { animation: pulse 1.5s infinite; border-color: #f97316; color: #f97316; }
         @keyframes pulse {
             0% { box-shadow: -5px 0 10px rgba(249, 115, 22, 0.2); }
@@ -49,17 +47,29 @@
         .sidebar-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
         .sidebar-content::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 2px; }
 
+        /* 模組卡片通用設計 */
         .module-card { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; }
         .module-header { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; }
         
-        /* 將按鈕移入面板 */
+        /* 1. 事件詳細資訊卡片專用樣式 */
+        .badge-type { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+        .badge-type.real { background: #ef4444; color: #fff; }
+        .badge-type.predict { background: #eab308; color: #0f172a; }
+        .badge-type.tsunami { background: #06b6d4; color: #fff; margin-left: 4px; }
+        .badge-type.depth-level { background: #6366f1; color: #fff; margin-left: 4px; }
+        .card-title { font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 4px; margin-top: 6px;}
+        .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
+
+        /* 2. 視角按鈕區 */
         .layer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn-mode { background: rgba(15, 23, 42, 0.85); color: #cbd5e1; border: 1px solid rgba(56, 189, 248, 0.3); backdrop-filter: blur(8px); padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-grow: 1; text-align: center;}
         .btn-mode.active, .btn-mode:hover { background: #0284c7; color: #fff; border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
 
+        /* 3. 剖面圖 */
         #section-canvas { width: 100%; height: 140px; background: #090d16; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
         
-        /* 連結樣式優化 */
+        /* 4 & 5. 清單與連結 */
         .info-list-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #cbd5e1; transition: background 0.2s; padding: 6px; border-radius: 4px; }
         .info-list-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .info-list-item.hover-effect:hover { background: rgba(56, 189, 248, 0.1); cursor: pointer; }
@@ -70,16 +80,7 @@
         .status-archive { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
         .empty-text { color: #64748b; font-style: italic; font-size: 11px; text-align: center; padding: 10px 0; }
 
-        #dialog-card { position: absolute; z-index: 20; background: rgba(15, 23, 42, 0.94); border: 1px solid rgba(56, 189, 248, 0.5); backdrop-filter: blur(10px); border-radius: 12px; padding: 14px 18px; width: 320px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7); display: none; pointer-events: none; }
-        .badge-type { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
-        .badge-type.real { background: #ef4444; color: #fff; }
-        .badge-type.predict { background: #eab308; color: #0f172a; }
-        .badge-type.tsunami { background: #06b6d4; color: #fff; margin-left: 4px; }
-        .badge-type.depth-level { background: #6366f1; color: #fff; margin-left: 4px; }
-        .card-title { font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 4px; }
-        .card-meta { font-size: 12px; color: #38bdf8; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
-        .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
-
+        /* 底部時間軸 */
         .timeline-container { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); border-radius: 16px; padding: 12px 20px; width: min(850px, 92vw); display: flex; flex-direction: column; gap: 8px; }
         .timeline-top-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
         .timeline-slider-row { display: flex; align-items: center; gap: 12px; }
@@ -107,12 +108,22 @@
         <div class="sync-badge" id="sync-status">多元即時資料連線中...</div>
     </div>
 
-    <!-- 預設加入 collapsed 類別，隱藏面板 -->
     <div id="right-sidebar" class="collapsed">
         <div class="sidebar-toggle-btn pulse-animation" id="btn-toggle-sidebar" title="點擊展開功能選單">◀ 展開</div>
         <div class="sidebar-content">
             
-            <!-- 模組：視覺圖層控制 (移入側邊欄) -->
+            <div class="module-card" id="event-info-module" style="display: none; border-color: #f97316; box-shadow: 0 0 10px rgba(249, 115, 22, 0.2);">
+                <div class="module-header"><span id="ui-info-title">📍 事件詳細資訊</span></div>
+                <div style="margin-bottom: 2px;">
+                    <span class="badge-type real" id="c-badge">實際發生</span>
+                    <span class="badge-type tsunami" id="c-tsunami-badge" style="display:none;">海嘯風險</span>
+                    <span class="badge-type depth-level" id="c-depth-badge">淺層地震</span>
+                </div>
+                <div class="card-title" id="c-title">載入中...</div>
+                <div class="card-meta"><span id="c-date">--</span><span id="c-mag">--</span><span id="c-depth">--</span></div>
+                <div class="card-desc" id="c-desc">--</div>
+            </div>
+
             <div class="module-card">
                 <div class="module-header"><span id="ui-layer-title">🎛️ 視覺圖層控制面板</span></div>
                 <div class="layer-controls">
@@ -124,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- 模組：構造幾何與震源剖面 -->
             <div class="module-card">
                 <div class="module-header">
                     <span id="ui-section-title">📐 構造幾何與震源剖面</span>
@@ -136,27 +146,16 @@
                 </div>
             </div>
             
-            <!-- 模組：Webcams -->
             <div class="module-card">
                 <div class="module-header"><span id="ui-webcam-title">📹 區域實況 Webcams</span></div>
                 <div id="webcam-list"><div class="empty-text">尚無選定區域之影像訊號...</div></div>
             </div>
 
-            <!-- 模組：News -->
             <div class="module-card">
                 <div class="module-header"><span id="ui-news-title">📰 區域地質新聞快訊</span></div>
                 <div id="news-list"><div class="empty-text">尚無選定區域之新聞資訊...</div></div>
             </div>
         </div>
-    </div>
-
-    <div id="dialog-card">
-        <span class="badge-type real" id="c-badge">實際發生</span>
-        <span class="badge-type tsunami" id="c-tsunami-badge" style="display:none;">海嘯風險</span>
-        <span class="badge-type depth-level" id="c-depth-badge">淺層地震</span>
-        <div class="card-title" id="c-title">載入中...</div>
-        <div class="card-meta"><span id="c-date">--</span><span id="c-mag">--</span><span id="c-depth">--</span></div>
-        <div class="card-desc" id="c-desc">--</div>
     </div>
 
     <div class="timeline-container">
@@ -177,7 +176,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // 自動偵測語系機制優化 (結合 navigator 與 timezone)
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         let inferredLang = navigator.language.startsWith('zh') ? 'zh-TW' : (navigator.language.startsWith('ja') ? 'ja' : 'en');
         if (tz === 'Asia/Taipei') inferredLang = 'zh-TW';
@@ -188,7 +186,7 @@
                 title: "全球板塊構造動力學與海嘯擴散平台",
                 subtitle: "USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力動態牽引",
                 syncing: "多元資料庫同步中...", synced: "已同步 USGS + EMSC 雙源即時數據",
-                layerTitle: "🎛️ 視覺圖層控制面板",
+                infoTitle: "📍 事件詳細資訊", layerTitle: "🎛️ 視覺圖層控制面板",
                 btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊邊界", btnStress: "月球引力", btnShare: "🔗 分享視角",
                 toastShare: "已複製專屬分享網址到剪貼簿！",
                 sectionTitle: "📐 構造幾何與震源剖面", webcamTitle: "📹 區域實況 Webcams", newsTitle: "📰 區域地質新聞快訊",
@@ -200,7 +198,7 @@
                 title: "Global Tectonic Dynamics & Tsunami Platform",
                 subtitle: "USGS + EMSC Fusion · Plate Boundaries · Tidal Stress Pull",
                 syncing: "Syncing Multi-Source APIs...", synced: "USGS + EMSC Synced",
-                layerTitle: "🎛️ Visual Layers Control",
+                infoTitle: "📍 Event Details", layerTitle: "🎛️ Visual Layers Control",
                 btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Bounds", btnStress: "Lunar Pull", btnShare: "🔗 Share View",
                 toastShare: "View link copied to clipboard!",
                 sectionTitle: "📐 Fault Geometry & Cross-Section", webcamTitle: "📹 Regional Webcams", newsTitle: "📰 Geologic News Feed",
@@ -212,7 +210,7 @@
                 title: "全球プレートダイナミクス・リアルタイム地震監視",
                 subtitle: "USGS + EMSC マルチソース同期 · 月の引力シミュレーション",
                 syncing: "マルチソース同期中...", synced: "USGS + EMSC 同期完了",
-                layerTitle: "🎛️ 視覚レイヤー制御",
+                infoTitle: "📍 イベント詳細情報", layerTitle: "🎛️ 視覚レイヤー制御",
                 btnNebula: "応力星雲", btnTsunami: "津波シミュ", btnPlates: "プレート境界", btnStress: "月の引力", btnShare: "🔗 視点共有",
                 toastShare: "共有リンクをコピーしました！",
                 sectionTitle: "📐 断層構造・震源断面", webcamTitle: "📹 地域ライブカメラ", newsTitle: "📰 地質ニュース",
@@ -228,6 +226,7 @@
             document.getElementById('ui-title').innerText = lang.title;
             document.getElementById('ui-subtitle').innerText = lang.subtitle;
             document.getElementById('sync-status').innerText = lang.syncing;
+            document.getElementById('ui-info-title').innerText = lang.infoTitle;
             document.getElementById('ui-layer-title').innerText = lang.layerTitle;
             document.getElementById('btn-toggle-nebula').innerText = lang.btnNebula;
             document.getElementById('btn-toggle-tsunami').innerText = lang.btnTsunami;
@@ -275,10 +274,11 @@
         let stressFieldGroup;
         
         let targetCameraPos;
+        let isAutoTracking = false; // 修復: 防止鏡頭自回彈的開關
         let raycaster;
         let mouse;
         let globalClock = 0;
-        let moonAngle = 0; // 用於月球引力動畫
+        let moonAngle = 0;
         
         let currentIndex = -1;
         let showNebula = true;
@@ -289,7 +289,6 @@
         let timelineTimer = null;
 
         const container = document.getElementById('webgl-container');
-        const dialogCard = document.getElementById('dialog-card');
         const sectionCanvas = document.getElementById('section-canvas');
         const sCtx = sectionCanvas.getContext('2d');
 
@@ -346,7 +345,6 @@
                 .catch(err => console.log('Plate data error:', err));
         }
 
-        // 月球引力動態牽引動畫 (Tidal Bulge)
         function buildLunarStressField() {
             stressFieldGroup = new THREE.Group();
             const points = [];
@@ -356,7 +354,6 @@
                 }
             }
             const geo = new THREE.BufferGeometry().setFromPoints(points);
-            // 儲存原始位置供動畫使用
             geo.setAttribute('basePosition', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.array), 3));
             
             const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
@@ -515,6 +512,9 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true; controls.dampingFactor = 0.05;
             controls.minDistance = 120; controls.maxDistance = 500;
+            
+            // 修復: 當使用者手動操作時解除自動鎖定，防止自回彈
+            controls.addEventListener('start', () => { isAutoTracking = false; });
 
             globeGroup = new THREE.Group();
             scene.add(globeGroup);
@@ -548,7 +548,7 @@
 
             loadTectonicPlates();
             buildSpectralNebulaPointCloud();
-            buildLunarStressField(); // 啟動月球引力層
+            buildLunarStressField();
             rebuildMarkersAndControls();
 
             refreshMultiSourceData();
@@ -718,7 +718,6 @@
             document.getElementById('hud-subduction-angle').innerText = `Dip: ${data.dipAngle || 28}°`;
         }
 
-        // 智慧配對區域 (修正 Webcams / News 無法顯示的問題)
         function getRegionKey(locString) {
             if (locString.includes('台灣') || locString.includes('琉球')) return 'taiwan';
             if (locString.includes('南美') || locString.includes('智利') || locString.includes('祕魯') || locString.includes('哥倫比亞')) return 'southamerica';
@@ -727,7 +726,6 @@
             return 'default';
         }
 
-        // 動態生成可點擊連結 (Clickable Hyperlinks)
         function populateList(containerId, dataArray, icon, type) {
             const el = document.getElementById(containerId);
             el.innerHTML = '';
@@ -735,7 +733,6 @@
             
             dataArray.forEach(item => {
                 const isOnline = item.status === "online";
-                // webcam 使用 Youtube 搜尋，news 使用 Google News 搜尋
                 const searchUrl = type === 'webcam' 
                     ? `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}+live` 
                     : `https://news.google.com/search?q=${encodeURIComponent(item.title)}`;
@@ -757,6 +754,7 @@
             const target = markerObjects[index];
 
             targetCameraPos = latLngToVector3(target.data.lat, target.data.lng, RADIUS * 1.8);
+            isAutoTracking = true; // 點擊時開啟追蹤
 
             document.querySelectorAll('.btn-step').forEach(b => b.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-step-${index}`);
@@ -788,11 +786,10 @@
             document.getElementById('c-depth').innerText = `${lang.depthLabel} ${target.data.depth} km`;
             document.getElementById('c-desc').innerText = target.data.desc;
             
-            dialogCard.style.display = 'block';
+            document.getElementById('event-info-module').style.display = 'flex';
 
             drawCrossSection(target.data);
             
-            // 透過地理關鍵字智能配對 Webcam/News
             const locKey = getRegionKey(target.data.location); 
             populateList('webcam-list', mockWebcamData[locKey], '📹', 'webcam');
             populateList('news-list', mockNewsData[locKey], '📰', 'news');
@@ -800,7 +797,7 @@
             document.getElementById('right-sidebar').classList.remove('collapsed');
             const toggleBtn = document.getElementById('btn-toggle-sidebar');
             toggleBtn.innerText = '▶ 收起';
-            toggleBtn.classList.remove('pulse-animation'); // 點擊後移除引導動畫
+            toggleBtn.classList.remove('pulse-animation'); 
         }
 
         function setupUIEventListeners() {
@@ -822,7 +819,7 @@
             document.getElementById('btn-toggle-sidebar').onclick = function() {
                 const sidebar = document.getElementById('right-sidebar');
                 sidebar.classList.toggle('collapsed');
-                this.classList.remove('pulse-animation'); // 點擊後移除引導動畫
+                this.classList.remove('pulse-animation');
                 this.innerText = sidebar.classList.contains('collapsed') ? '◀ 展開' : '▶ 收起';
             };
 
@@ -850,21 +847,14 @@
             };
         }
 
-        function updateDialogPosition() {
-            if (currentIndex < 0 || !markerObjects[currentIndex]) return;
-            const screenPos = markerObjects[currentIndex].pos.clone().project(camera);
-            if (screenPos.z < 0.98) { 
-                dialogCard.style.display = 'block';
-                dialogCard.style.left = `${(screenPos.x*.5+.5)*window.innerWidth - 160}px`; 
-                dialogCard.style.top = `${(-screenPos.y*.5+.5)*window.innerHeight - 180}px`; 
-            } else dialogCard.style.display = 'none';
-        }
-
         function animate() {
             requestAnimationFrame(animate);
             globalClock += 0.03;
 
-            camera.position.lerp(targetCameraPos, 0.04);
+            // 修復：只有在開啟 isAutoTracking 時才強迫鏡頭移動，避免與滑鼠滾輪衝突
+            if (isAutoTracking && targetCameraPos) {
+                camera.position.lerp(targetCameraPos, 0.04);
+            }
             controls.update(); 
 
             markerObjects.forEach(m => {
@@ -896,7 +886,6 @@
                 nebulaPointsMesh.geometry.attributes.position.needsUpdate = true;
             }
 
-            // 動態月球引力計算 (Tidal Bulge Effect)
             if (showStress && stressFieldGroup) {
                 moonAngle += 0.01;
                 const moonVec = new THREE.Vector3(Math.cos(moonAngle), 0, Math.sin(moonAngle)).normalize();
@@ -906,14 +895,13 @@
                     const bx = basePositions.getX(i), by = basePositions.getY(i), bz = basePositions.getZ(i);
                     const pt = new THREE.Vector3(bx, by, bz);
                     const dot = Math.abs(pt.clone().normalize().dot(moonVec));
-                    const bulge = Math.pow(dot, 2) * 5.0; // 模擬引力突起
+                    const bulge = Math.pow(dot, 2) * 5.0; 
                     pt.setLength(RADIUS + 0.2 + bulge);
                     positions.setXYZ(i, pt.x, pt.y, pt.z);
                 }
                 positions.needsUpdate = true;
             }
 
-            updateDialogPosition();
             renderer.render(scene, camera);
         }
 
