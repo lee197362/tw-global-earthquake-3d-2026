@@ -121,10 +121,11 @@
             <div class="module-card">
                 <div class="module-header"><span id="ui-layer-title">🎛️ 視覺圖層控制面板</span></div>
                 <div class="layer-controls">
-                    <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
-                    <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前</button>
-                    <button class="btn-mode active" id="btn-toggle-plates">板塊邊界</button>
-                    <button class="btn-mode active" id="btn-toggle-stress">月球引力</button>
+                    <!-- 預設移除 active 樣式 -->
+                    <button class="btn-mode" id="btn-toggle-nebula">應力星雲</button>
+                    <button class="btn-mode" id="btn-toggle-tsunami">海嘯波前</button>
+                    <button class="btn-mode" id="btn-toggle-plates">板塊邊界</button>
+                    <button class="btn-mode" id="btn-toggle-stress">月球引力</button>
                     <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
                 </div>
             </div>
@@ -250,7 +251,6 @@
             "default": [ { title: "全球地質與海洋觀測站", type: "衛星觀測", status: "archive", time: "1小時前" } ]
         };
         
-        // 修正：將容易造成 Google News 誤判的 "板塊活動綜述" 改為明確地質字眼
         const mockNewsData = {
             "taiwan": [ { title: "東部外海斷層交界處微震頻繁", media: "中央通訊社", time: "2小時前" } ],
             "southamerica": [ { title: "Peru-Chile Trench seismic gap monitoring", media: "Geology Today", time: "12小時前" } ],
@@ -276,10 +276,13 @@
         let moonAngle = 0;
         
         let currentIndex = -1;
-        let showNebula = true;
-        let showTsunami = true;
-        let showPlates = true;
-        let showStress = true;
+        
+        // 變更預設狀態為 false，載入時畫面更乾淨
+        let showNebula = false;
+        let showTsunami = false;
+        let showPlates = false;
+        let showStress = false;
+        
         let isTimelinePlaying = false;
         let timelineTimer = null;
 
@@ -670,6 +673,8 @@
                         const tM = new THREE.Mesh(sharedRes.geo.tsunami, new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.8 }));
                         tM.position.copy(posSurface); tM.lookAt(0,0,0); globeGroup.add(tM);
                         tRings.push({ mesh: tM, scale: 1.0 + w * 3.5, speed: 0.025, maxScale: 14.0 });
+                        // 同步初始化海嘯波的隱藏狀態
+                        tM.visible = showTsunami;
                     }
                 }
                 markerObjects.push({ dot: dotMesh, pillar: pillarMesh, ring1: r1, ring2: r2, sprite: sprite, hitSphere: hitSphere, pos: posSurface, data: eq, scale1: 1.0, scale2: 2.4, tsunamiRings: tRings });
@@ -719,7 +724,6 @@
             return 'default';
         }
 
-        // 修正：加入隱形關鍵字，避免 Google 導向金融股市板塊
         function populateList(containerId, dataArray, icon, type, eventLocation = '') {
             const el = document.getElementById(containerId);
             el.innerHTML = '';
@@ -727,21 +731,9 @@
             
             dataArray.forEach(item => {
                 const isOnline = item.status === "online";
-                
-                // 動態組合搜尋字串，強制加入地質/地震相關的 Context
-                let searchQuery = item.title;
-                if (type === 'webcam') {
-                    searchQuery += lang.title.includes('全球') ? ' 監視器 live' : ' live cam';
-                } else if (type === 'news') {
-                    // 若是新聞，強制加上 "地震 OR 地質" 以避免搜到股票市場的"板塊"
-                    const fallbackContext = lang.title.includes('全球') ? ' 地震 OR 地質' : ' earthquake';
-                    const locContext = eventLocation ? ` ${eventLocation} ` : ' ';
-                    searchQuery += locContext + fallbackContext;
-                }
-
                 const searchUrl = type === 'webcam' 
-                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}` 
-                    : `https://news.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}+live` 
+                    : `https://news.google.com/search?q=${encodeURIComponent(item.title)}`;
                 
                 el.innerHTML += `
                     <a href="${searchUrl}" target="_blank" style="text-decoration: none; display: block;" class="info-list-item hover-effect">
@@ -796,9 +788,8 @@
 
             drawCrossSection(target.data);
             
-            // 傳遞 location 作為強制搜尋條件
             const locKey = getRegionKey(target.data.location); 
-            const cleanLocation = target.data.location.split(' ')[0]; // 擷取地點主詞 (如 "台灣東部外海")
+            const cleanLocation = target.data.location.split(' ')[0];
             populateList('webcam-list', mockWebcamData[locKey], '📹', 'webcam', cleanLocation);
             populateList('news-list', mockNewsData[locKey], '📰', 'news', cleanLocation);
             
