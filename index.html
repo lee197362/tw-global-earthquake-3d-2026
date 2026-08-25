@@ -87,7 +87,7 @@
 
         #share-toast { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(14, 165, 233, 0.95); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; display: none; }
         
-        /* 載入畫面，避免首屏白屏 */
+        /* 載入畫面 */
         #loading-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #020617; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-weight: bold; font-size: 18px; transition: opacity 0.5s; }
     </style>
 </head>
@@ -148,12 +148,11 @@
 
     <div id="webgl-container"></div>
 
-    <!-- 延遲載入 (defer) 避免阻塞 DOM 渲染 -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- 移除 defer，確保依賴載入順序正確 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // 模擬數據庫 (擴充資料量以展示效能)
         let allEarthquakeData = [
             { id: "p1", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 Q3-Q4", location: "台灣東部外海 (琉球海溝段)", lat: 23.8, lng: 122.5, mag: "M 7.2", depth: 22, dipAngle: 26, isOceanic: true, desc: "菲律賓海板塊向西北隱沒至歐亞板塊下方，滑動赤字累積達 8.0 cm/yr。" },
             { id: "p2", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 下半年", location: "南美洲 中段隱沒帶 (祕魯/智利交界)", lat: -18.5, lng: -70.3, mag: "M 7.5", depth: 35, dipAngle: 22, isOceanic: true, desc: "納斯卡板塊東向低角度俯衝南美陸塊，特大逆衝破裂長週期窗口逼近。" },
@@ -180,22 +179,22 @@
         let scene, camera, renderer, controls, globeGroup;
         let markerObjects = [];
         let clickableHitTargets = [];
-        let targetCameraPos = new THREE.Vector3(0, 30, 280); 
+        
+        // 修正 B：不可以在全域直接呼叫 new THREE，延遲到 init() 內執行
+        let targetCameraPos;
+        let raycaster;
+        let mouse;
         
         let currentIndex = -1;
         let showTsunami = true;
         let isTimelinePlaying = false;
         let timelineTimer = null;
 
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
         const container = document.getElementById('webgl-container');
         const dialogCard = document.getElementById('dialog-card');
         const sectionCanvas = document.getElementById('section-canvas');
         const sCtx = sectionCanvas.getContext('2d');
 
-        // ================= 記憶體優化：資源共享池 =================
-        // 集中宣告幾何體與靜態材質，避免迴圈內重複 new 造成 VRAM 暴增
         const sharedRes = { geo: {}, mat: {}, spriteCache: {} };
 
         function latLngToVector3(lat, lng, radius) {
@@ -204,7 +203,6 @@
             return new THREE.Vector3( -radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi), radius * Math.sin(phi) * Math.sin(theta) );
         }
 
-        // ================= 記憶體優化：快取 Sprite 文字 =================
         function getCachedSpriteMaterial(text, isPredict) {
             const key = text + (isPredict ? '_p' : '_r');
             if (sharedRes.spriteCache[key]) return sharedRes.spriteCache[key];
@@ -223,13 +221,17 @@
         }
 
         function init() {
+            // 修正 B：在此初始化 THREE 的物件
+            targetCameraPos = new THREE.Vector3(0, 30, 280); 
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
             camera.position.copy(targetCameraPos);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            // 限制像素比例，防止超高解析度螢幕(如 Retina)佔用過多 GPU 資源
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
             container.appendChild(renderer.domElement);
 
@@ -240,12 +242,9 @@
             globeGroup = new THREE.Group();
             scene.add(globeGroup);
 
-            // ================= 記憶體優化：幾何減面 =================
-            // 地球分段由 64x64 降為 48x48，減少將近 50% 的頂點運算量
             const texLoader = new THREE.TextureLoader();
             const earthMat = new THREE.MeshPhongMaterial({ 
                 map: texLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', () => {
-                    // 貼圖載入完成後隱藏 Loading
                     document.getElementById('loading-screen').style.opacity = '0';
                     setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
                 }),
@@ -254,7 +253,6 @@
             });
             globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 48, 48), earthMat));
             
-            // 降低網格分段
             globeGroup.add(new THREE.Mesh(new THREE.IcosahedronGeometry(RADIUS * 1.04, 2), new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.16 })));
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.9));
@@ -262,15 +260,14 @@
             dirLight.position.set(200, 100, 200);
             scene.add(dirLight);
 
-            // 初始化共用幾何體與材質
-            sharedRes.geo.dot = new THREE.SphereGeometry(0.7, 8, 8); // 減面
-            sharedRes.geo.ring = new THREE.RingGeometry(1.2, 1.45, 24); // 減面
+            sharedRes.geo.dot = new THREE.SphereGeometry(0.7, 8, 8); 
+            sharedRes.geo.ring = new THREE.RingGeometry(1.2, 1.45, 24);
             sharedRes.geo.hit = new THREE.SphereGeometry(3.5, 8, 8);
             sharedRes.geo.tsunami = new THREE.RingGeometry(2.0, 2.5, 32);
             
             sharedRes.mat.dotReal = new THREE.MeshBasicMaterial({ color: 0xef4444 });
             sharedRes.mat.dotPredict = new THREE.MeshBasicMaterial({ color: 0xeab308 });
-            sharedRes.mat.hit = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); // 隱形碰撞用
+            sharedRes.mat.hit = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
             sharedRes.mat.lineReal = new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
             sharedRes.mat.linePredict = new THREE.LineBasicMaterial({ color: 0xeab308, transparent: true, opacity: 0.7 });
 
@@ -301,7 +298,6 @@
                 if (intersects.length > 0) { focusEvent(intersects[0].object.userData.eventIndex); }
             });
 
-            // 加入 Debounce 防抖，減少連續縮放視窗造成的卡頓
             let resizeTimeout;
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
@@ -352,14 +348,11 @@
                 const posSurface = latLngToVector3(eq.lat, eq.lng, RADIUS + 0.8);
                 const posDepth = latLngToVector3(eq.lat, eq.lng, RADIUS - Math.min(eq.depth / 15, 15));
 
-                // Pillar 線段幾何體必須獨立，但共用材質
                 const pillarMesh = new THREE.Line(new THREE.BufferGeometry().setFromPoints([posSurface, posDepth]), isPredict ? sharedRes.mat.linePredict : sharedRes.mat.lineReal);
                 
-                // Dot 共用幾何體與材質
                 const dotMesh = new THREE.Mesh(sharedRes.geo.dot, isPredict ? sharedRes.mat.dotPredict : sharedRes.mat.dotReal);
                 dotMesh.position.copy(posSurface);
 
-                // Ring 動態需要獨立變更 Opacity，所以 clone 材質，但共用幾何體
                 const ringMatBase = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
                 const r1 = new THREE.Mesh(sharedRes.geo.ring, ringMatBase); r1.position.copy(posSurface); r1.lookAt(0,0,0);
                 const r2 = new THREE.Mesh(sharedRes.geo.ring, ringMatBase.clone()); r2.position.copy(posSurface); r2.lookAt(0,0,0);
@@ -367,7 +360,6 @@
                 const sprite = new THREE.Sprite(getCachedSpriteMaterial(eq.mag, isPredict));
                 sprite.position.copy(latLngToVector3(eq.lat, eq.lng, RADIUS + 4.2)); sprite.scale.set(9, 4.5, 1);
                 
-                // HitBox 共用幾何與材質
                 const hitSphere = new THREE.Mesh(sharedRes.geo.hit, sharedRes.mat.hit);
                 hitSphere.position.copy(posSurface); hitSphere.userData = { eventIndex: idx };
 
@@ -505,7 +497,6 @@
             controls.update(); 
 
             markerObjects.forEach(m => {
-                // 減少不必要的屬性更新，只在可見時計算
                 if (m.ring1.visible) {
                     m.scale1 += 0.01; if (m.scale1 > 3.8) m.scale1 = 1.0;
                     m.ring1.scale.set(m.scale1, m.scale1, 1); m.ring1.material.opacity = Math.max(0, (3.8 - m.scale1) / 2.8);
@@ -526,7 +517,7 @@
             renderer.render(scene, camera);
         }
 
-        // 確保 DOM 載入後再初始化 3D 引擎
+        // 確保 DOM 載入後再執行
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
