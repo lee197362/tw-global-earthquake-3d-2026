@@ -78,11 +78,9 @@
     </div>
 
     <div class="view-controls">
-        <!-- 復原：右上角的視圖開關按鈕 -->
         <button class="btn-mode active" id="btn-toggle-nebula">應力星雲</button>
         <button class="btn-mode active" id="btn-toggle-tsunami">海嘯波前</button>
-        <button class="btn-mode active" id="btn-toggle-plates">板塊動態流</button>
-        <button class="btn-mode active" id="btn-toggle-stress">月球引力</button>
+        <button class="btn-mode active" id="btn-toggle-plates">板塊邊界</button>
         <button class="btn-mode" id="btn-share-link">🔗 分享視角</button>
     </div>
 
@@ -137,27 +135,26 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // ================= 復原：雙語系翻譯字典 (i18n) =================
         const i18nDict = {
             "zh-TW": {
                 title: "全球板塊構造動力學與海嘯擴散平台",
-                subtitle: "USGS + EMSC 多來源即時融合 · 板塊動態流 · 月球引力應力 · 點擊特寫放大",
+                subtitle: "USGS + EMSC 多來源即時融合 · 板塊邊界 · 應力星雲 · 點擊特寫放大",
                 syncing: "多元資料庫同步中...", synced: "已同步 USGS + EMSC 雙源即時數據",
-                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊動態流", btnStress: "月球引力", btnShare: "🔗 分享視角",
+                btnNebula: "應力星雲", btnTsunami: "海嘯波前", btnPlates: "板塊邊界", btnShare: "🔗 分享視角",
                 toastShare: "已複製專屬分享網址到剪貼簿！",
                 sectionTitle: "📐 構造幾何與震源剖面", webcamTitle: "📹 區域實況 Webcams", newsTitle: "📰 區域地質新聞快訊",
-                timelineLabel: "📅 時序基準：", eventsLabel: "顯示中事件：", allTime: "包含未來預測",
+                timelineLabel: "📅 時序基準：", eventsLabel: "顯示中事件：", allTime: "全部時間",
                 badgeReal: "實際發生", badgePredict: "科學預警", badgeTsunami: "海嘯風險",
                 predictPrefix: "[預測]", depthLabel: "深度", shallow: "淺層 (<70km)", intermediate: "中深層 (70-300km)", deep: "超深層 (>300km)"
             },
             "en": {
                 title: "Global Tectonic Dynamics & Tsunami Platform",
-                subtitle: "USGS + EMSC Fusion · Plate Vectors · Lunar Stress · Interactive 3D",
+                subtitle: "USGS + EMSC Fusion · Plate Boundaries · Nebula · Interactive 3D",
                 syncing: "Syncing Multi-Source APIs...", synced: "USGS + EMSC Synced",
-                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Vectors", btnStress: "Lunar Stress", btnShare: "🔗 Share View",
+                btnNebula: "Stress Nebula", btnTsunami: "Tsunami Sim", btnPlates: "Plate Boundaries", btnShare: "🔗 Share View",
                 toastShare: "View link copied to clipboard!",
                 sectionTitle: "📐 Fault Geometry & Cross-Section", webcamTitle: "📹 Regional Webcams", newsTitle: "📰 Geologic News Feed",
-                timelineLabel: "📅 Timeline: ", eventsLabel: "Active Events: ", allTime: "Includes Forecasts",
+                timelineLabel: "📅 Timeline: ", eventsLabel: "Active Events: ", allTime: "All Time",
                 badgeReal: "Observed", badgePredict: "Forecast", badgeTsunami: "Tsunami Risk",
                 predictPrefix: "[Forecast]", depthLabel: "Depth", shallow: "Shallow (<70km)", intermediate: "Intermediate (70-300km)", deep: "Deep (>300km)"
             }
@@ -173,7 +170,6 @@
             document.getElementById('btn-toggle-nebula').innerText = lang.btnNebula;
             document.getElementById('btn-toggle-tsunami').innerText = lang.btnTsunami;
             document.getElementById('btn-toggle-plates').innerText = lang.btnPlates;
-            document.getElementById('btn-toggle-stress').innerText = lang.btnStress;
             document.getElementById('btn-share-link').innerText = lang.btnShare;
             document.getElementById('ui-section-title').innerText = lang.sectionTitle;
             document.getElementById('ui-webcam-title').innerText = lang.webcamTitle;
@@ -182,7 +178,6 @@
             document.getElementById('ui-events-label').innerText = lang.eventsLabel;
         }
 
-        // ================= 模擬數據庫 =================
         let allEarthquakeData = [
             { id: "p1", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 Q3-Q4", location: "台灣東部外海 (琉球海溝段)", lat: 23.8, lng: 122.5, mag: "M 7.2", depth: 22, dipAngle: 26, isOceanic: true, desc: "菲律賓海板塊向西北隱沒至歐亞板塊下方，滑動赤字累積達 8.0 cm/yr。" },
             { id: "p2", type: "predict", timestamp: new Date("2026-12-31").getTime(), date: "預測視窗：2026 下半年", location: "南美洲 中段隱沒帶 (祕魯/智利交界)", lat: -18.5, lng: -70.3, mag: "M 7.5", depth: 35, dipAngle: 22, isOceanic: true, desc: "納斯卡板塊東向低角度俯衝南美陸塊，特大逆衝破裂長週期窗口逼近。" },
@@ -210,9 +205,7 @@
         let markerObjects = [];
         let clickableHitTargets = [];
         
-        // ================= 復原：三大視覺特效層變數 =================
-        let plateVelocityGroup;
-        let stressFieldGroup;
+        let plateLinesGroup;
         let nebulaPointsMesh, nebulaPositions, nebulaBasePositions, nebulaCount;
         
         let targetCameraPos;
@@ -221,13 +214,9 @@
         let globalClock = 0;
         
         let currentIndex = -1;
-        
-        // 視覺圖層開關狀態
         let showNebula = true;
         let showTsunami = true;
         let showPlates = true;
-        let showStress = true;
-
         let isTimelinePlaying = false;
         let timelineTimer = null;
 
@@ -236,7 +225,6 @@
         const sectionCanvas = document.getElementById('section-canvas');
         const sCtx = sectionCanvas.getContext('2d');
 
-        // 記憶體優化共用池
         const sharedRes = { geo: {}, mat: {}, spriteCache: {} };
 
         function latLngToVector3(lat, lng, radius) {
@@ -268,41 +256,28 @@
             return { color: 0xa855f7, hex: "#a855f7", text: lang.deep };
         }
 
-        // ================= 復原：板塊移動向量箭頭 =================
-        function buildPlateVelocityVectors() {
-            plateVelocityGroup = new THREE.Group();
-            const vectors = [
-                { lat: 24, lng: 122, dir: 310, speed: 8.2, color: 0xef4444 }, // 菲律賓海板塊 -> 歐亞
-                { lat: -18, lng: -72, dir: 80, speed: 6.5, color: 0xeab308 }, // 納斯卡 -> 南美
-                { lat: 35, lng: 141, dir: 280, speed: 9.1, color: 0xef4444 }, // 太平洋 -> 日本
-                { lat: 0, lng: -20, dir: 90, speed: 2.5, color: 0x38bdf8 } // 大西洋洋脊張裂
-            ];
-            vectors.forEach(v => {
-                const headLen = v.speed / 2;
-                const ptOnSurface = latLngToVector3(v.lat, v.lng, RADIUS + 0.5);
-                const dirVec = new THREE.Vector3(1, 0, 0); 
-                const arrowHelper = new THREE.ArrowHelper(dirVec, ptOnSurface, headLen, v.color, headLen * 0.3, headLen * 0.2);
-                plateVelocityGroup.add(arrowHelper);
-            });
-            globeGroup.add(plateVelocityGroup);
-            plateVelocityGroup.visible = showPlates;
-        }
-        
-        // ================= 復原：月球引力應力場 =================
-        function buildLunarStressField() {
-            stressFieldGroup = new THREE.Group();
-            const points = [];
-            for (let lat = -80; lat <= 80; lat += 20) {
-                for (let lng = -180; lng < 180; lng += 20) { points.push(latLngToVector3(lat, lng, RADIUS + 0.2)); }
-            }
-            const geo = new THREE.BufferGeometry().setFromPoints(points);
-            const mat = new THREE.PointsMaterial({ color: 0xa855f7, size: 1.0, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false });
-            stressFieldGroup.add(new THREE.Points(geo, mat));
-            globeGroup.add(stressFieldGroup);
-            stressFieldGroup.visible = showStress;
+        function loadTectonicPlates() {
+            plateLinesGroup = new THREE.Group();
+            fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
+                .then(res => res.json())
+                .then(data => {
+                    const material = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.35, linewidth: 1 });
+                    data.features.forEach(feature => {
+                        const coords = feature.geometry.coordinates;
+                        const points = [];
+                        coords.forEach(coord => {
+                            points.push(latLngToVector3(coord[1], coord[0], RADIUS + 0.4));
+                        });
+                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                        const line = new THREE.Line(geometry, material);
+                        plateLinesGroup.add(line);
+                    });
+                    globeGroup.add(plateLinesGroup);
+                    plateLinesGroup.visible = showPlates;
+                })
+                .catch(err => console.log('Plate data error:', err));
         }
 
-        // ================= 復原：光譜應力星雲 (Nebula) =================
         function buildSpectralNebulaPointCloud() {
             const stressNebulaCenters = [
                 { lat: 35.0, lng: 140.0, count: 350, radiusDeg: 7.0 }, { lat: 23.5, lng: 122.0, count: 300, radiusDeg: 5.5 },
@@ -345,7 +320,6 @@
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            // 星雲專用點陣材質 (復原 Glow Texture 機制)
             const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
@@ -357,10 +331,78 @@
             nebulaPointsMesh = new THREE.Points(geometry, material);
             nebulaPositions = positions; nebulaBasePositions = basePositions;
             globeGroup.add(nebulaPointsMesh);
+            nebulaPointsMesh.visible = showNebula;
+        }
+
+        async function refreshMultiSourceData() {
+            const rawEvents = [];
+            let activeSources = [];
+
+            try {
+                const resUSGS = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson');
+                const dataUSGS = await resUSGS.json();
+                dataUSGS.features.forEach(eq => {
+                    const mag = eq.properties.mag;
+                    const coords = eq.geometry.coordinates;
+                    if (mag >= 5.5 || (coords[1] < -45 && mag >= 5.0)) {
+                        rawEvents.push({
+                            id: "usgs_" + eq.id, source: "USGS", timestamp: eq.properties.time,
+                            lat: coords[1], lng: coords[0], depth: Math.round(coords[2]), mag: "M " + mag.toFixed(1),
+                            location: eq.properties.place, dipAngle: Math.floor(20 + Math.random() * 25),
+                            isOceanic: Math.abs(coords[1]) < 55 && coords[2] < 60
+                        });
+                    }
+                });
+                activeSources.push("USGS");
+            } catch (e) { console.warn("USGS API Fallback", e); }
+
+            try {
+                const resEMSC = await fetch('https://www.seismicportal.eu/fdsnws/event/1/query?limit=60&minmag=5.5&format=json');
+                const dataEMSC = await resEMSC.json();
+                if (dataEMSC && dataEMSC.features) {
+                    dataEMSC.features.forEach(eq => {
+                        const props = eq.properties;
+                        const coords = eq.geometry.coordinates;
+                        rawEvents.push({
+                            id: "emsc_" + (props.unid || eq.id), source: "EMSC", timestamp: new Date(props.time).getTime(),
+                            lat: coords[1], lng: coords[0], depth: Math.round(Math.abs(coords[2])),
+                            mag: "M " + parseFloat(props.mag).toFixed(1), location: props.flynn_region || "EMSC Event",
+                            dipAngle: Math.floor(22 + Math.random() * 24), isOceanic: Math.abs(coords[1]) < 55 && Math.abs(coords[2]) < 60
+                        });
+                    });
+                    activeSources.push("EMSC");
+                }
+            } catch (e) { console.warn("EMSC API Fallback", e); }
+
+            const deduplicatedReals = [];
+            rawEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+            rawEvents.forEach(evt => {
+                const isDuplicate = deduplicatedReals.some(existing => {
+                    const timeDiff = Math.abs(existing.timestamp - evt.timestamp);
+                    const distDiff = Math.hypot(existing.lat - evt.lat, existing.lng - evt.lng);
+                    return timeDiff < 90000 && distDiff < 1.5;
+                });
+                if (!isDuplicate) {
+                    const timeStr = new Date(evt.timestamp).toISOString().split('T')[0];
+                    deduplicatedReals.push({
+                        ...evt, type: "real", date: `${timeStr} (${evt.source})`,
+                        desc: `[${evt.source}] 震央座標 [${evt.lat.toFixed(2)}, ${evt.lng.toFixed(2)}]，${lang.depthLabel} ${evt.depth} km。`
+                    });
+                }
+            });
+
+            const predictItems = allEarthquakeData.filter(d => d.type === "predict");
+            allEarthquakeData = [...predictItems, ...deduplicatedReals];
+
+            const sourceText = activeSources.length > 0 ? activeSources.join(" + ") : "Cache";
+            document.getElementById('sync-status').innerText = `已同步 ${sourceText} 即時數據 (${allEarthquakeData.length} 筆)`;
+            rebuildMarkersAndControls();
+            filterEventsByTimeline(parseInt(document.getElementById('timeline-slider').value));
         }
 
         function init() {
-            applyLanguage(); // 套用 i18n
+            applyLanguage();
             document.getElementById('sync-status').innerText = lang.synced;
 
             targetCameraPos = new THREE.Vector3(0, 30, 280); 
@@ -400,10 +442,9 @@
             dirLight.position.set(200, 100, 200);
             scene.add(dirLight);
 
-            // 建立共用池
             sharedRes.geo.dot = new THREE.SphereGeometry(0.7, 8, 8); 
             sharedRes.geo.ring = new THREE.RingGeometry(1.2, 1.45, 24);
-            sharedRes.geo.hit = new THREE.SphereGeometry(3.5, 8, 8);
+            sharedRes.geo.hit = new THREE.SphereGeometry(3.6, 8, 8);
             sharedRes.geo.tsunami = new THREE.RingGeometry(2.0, 2.5, 32);
             sharedRes.mat.dotReal = new THREE.MeshBasicMaterial({ color: 0xef4444 });
             sharedRes.mat.dotPredict = new THREE.MeshBasicMaterial({ color: 0xeab308 });
@@ -411,12 +452,12 @@
             sharedRes.mat.lineReal = new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
             sharedRes.mat.linePredict = new THREE.LineBasicMaterial({ color: 0xeab308, transparent: true, opacity: 0.7 });
 
-            // 復原：初始化視覺層
+            loadTectonicPlates();
             buildSpectralNebulaPointCloud();
-            buildPlateVelocityVectors();
-            buildLunarStressField();
-
             rebuildMarkersAndControls();
+
+            refreshMultiSourceData();
+            setInterval(refreshMultiSourceData, 300000);
 
             const now = Date.now();
             const reals = allEarthquakeData.filter(e => e.type === 'real');
@@ -432,15 +473,39 @@
 
             setupUIEventListeners();
             
-            window.addEventListener('click', (event) => {
-                if(event.target.tagName === 'BUTTON' || event.target.closest('#right-sidebar') || event.target.closest('.timeline-container')) return;
-                
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            let pointerDownTime = 0;
+            let startX = 0, startY = 0;
+
+            window.addEventListener('pointerdown', (e) => {
+                pointerDownTime = Date.now();
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
-                
                 const intersects = raycaster.intersectObjects(clickableHitTargets);
-                if (intersects.length > 0) { focusEvent(intersects[0].object.userData.eventIndex); }
+                document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+            });
+
+            window.addEventListener('pointerup', (e) => {
+                if(e.target.tagName === 'BUTTON' || e.target.closest('#right-sidebar') || e.target.closest('.timeline-container')) return;
+                const clickDuration = Date.now() - pointerDownTime;
+                const distMoved = Math.hypot(e.clientX - startX, e.clientY - startY);
+
+                if (clickDuration < 300 && distMoved < 6) {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(clickableHitTargets);
+
+                    if (intersects.length > 0) {
+                        const targetEventIdx = intersects[0].object.userData.eventIndex;
+                        if (targetEventIdx !== undefined) focusEvent(targetEventIdx);
+                    }
+                }
             });
 
             let resizeTimeout;
@@ -483,7 +548,7 @@
         }
 
         function rebuildMarkersAndControls() {
-            markerObjects.forEach(m => { globeGroup.remove(m.dot); globeGroup.remove(m.hitSphere); });
+            markerObjects.forEach(m => { globeGroup.remove(m.dot); globeGroup.remove(m.hitSphere); globeGroup.remove(m.pillar); globeGroup.remove(m.ring1); globeGroup.remove(m.ring2); globeGroup.remove(m.sprite); if(m.tsunamiRings){ m.tsunamiRings.forEach(tr => globeGroup.remove(tr.mesh)); } });
             markerObjects = []; clickableHitTargets = [];
             const bar = document.getElementById('events-btn-container'); bar.innerHTML = '';
 
@@ -491,7 +556,7 @@
                 const isPredict = eq.type === 'predict';
                 const colorHex = isPredict ? 0xeab308 : 0xef4444;
                 const posSurface = latLngToVector3(eq.lat, eq.lng, RADIUS + 0.8);
-                const posDepth = latLngToVector3(eq.lat, eq.lng, RADIUS - Math.min(eq.depth / 15, 15));
+                const posDepth = latLngToVector3(eq.lat, eq.lng, RADIUS - Math.min(eq.depth / 20, 18));
 
                 const pillarMesh = new THREE.Line(new THREE.BufferGeometry().setFromPoints([posSurface, posDepth]), isPredict ? sharedRes.mat.linePredict : sharedRes.mat.lineReal);
                 
@@ -524,7 +589,7 @@
                 const btn = document.createElement('button');
                 btn.className = `btn-step ${isPredict ? 'predict-btn' : ''}`;
                 btn.id = `btn-step-${idx}`;
-                btn.innerText = `${idx + 1}. ${isPredict ? lang.predictPrefix : ''}${eq.location.split(' ')[0]}`;
+                btn.innerText = `${idx + 1}. ${isPredict ? lang.predictPrefix : ''}${eq.location.split(',')[0].split(' of ')[1] || eq.location.split(' ')[0]}`;
                 btn.onclick = () => focusEvent(idx);
                 bar.appendChild(btn);
             });
@@ -536,20 +601,26 @@
             const bg = sCtx.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, "#0c1527"); bg.addColorStop(1, "#020617");
             sCtx.fillStyle = bg; sCtx.fillRect(0, 0, w, h);
 
-            if (data.isOceanic) { sCtx.fillStyle = "rgba(6,182,212,0.3)"; sCtx.fillRect(0, 0, w*0.5, 12); }
+            if (data.isOceanic) { sCtx.fillStyle = "rgba(6,182,212,0.3)"; sCtx.fillRect(0, 0, w*0.55, 14); sCtx.fillStyle = "#38bdf8"; sCtx.font = "9px sans-serif"; sCtx.fillText("Sea Level", 10, 10); }
             const dip = (data.dipAngle || 30) * (Math.PI / 180);
             
             sCtx.beginPath(); sCtx.moveTo(0, 15); sCtx.lineTo(w*0.45, 15); sCtx.lineTo(w*0.9, h-10); sCtx.lineTo(w*0.8, h); sCtx.lineTo(w*0.35, 35); sCtx.lineTo(0, 35);
-            sCtx.fillStyle = "rgba(56,189,248,0.25)"; sCtx.fill(); sCtx.strokeStyle = "#38bdf8"; sCtx.stroke();
+            sCtx.fillStyle = "rgba(56,189,248,0.25)"; sCtx.fill(); sCtx.strokeStyle = "#38bdf8"; sCtx.lineWidth = 1.5; sCtx.stroke();
             
             sCtx.beginPath(); sCtx.moveTo(w*0.48, 15); sCtx.lineTo(w, 15); sCtx.lineTo(w, h-20); sCtx.lineTo(w*0.92, h-10);
-            sCtx.fillStyle = "rgba(249,115,22,0.18)"; sCtx.fill(); sCtx.strokeStyle = "#f97316"; sCtx.stroke();
+            sCtx.fillStyle = "rgba(249,115,22,0.18)"; sCtx.fill(); sCtx.strokeStyle = "#f97316"; sCtx.lineWidth = 1.5; sCtx.stroke();
+
+            sCtx.setLineDash([4, 4]); sCtx.strokeStyle = "rgba(148, 163, 184, 0.5)"; sCtx.beginPath(); sCtx.moveTo(w * 0.5, 40); sCtx.lineTo(w, 40); sCtx.stroke(); sCtx.setLineDash([]);
+            sCtx.fillStyle = "#94a3b8"; sCtx.font = "9px sans-serif"; sCtx.fillText("Moho", w - 45, 36);
 
             const fx = w*0.45 + (data.depth/150)*(w*0.35), fy = 15 + Math.sin(dip)*(data.depth*0.8);
-            sCtx.fillStyle = data.type === 'predict' ? "#eab308" : "#ef4444";
-            sCtx.beginPath(); sCtx.arc(fx, Math.min(fy, h-20), 4, 0, Math.PI*2); sCtx.fill();
+            const depthInfo = getDepthVisuals(data.depth);
+            sCtx.fillStyle = data.type === 'predict' ? "#eab308" : depthInfo.hex;
+            sCtx.beginPath(); sCtx.arc(fx, Math.min(fy, h-25), 5, 0, Math.PI*2); sCtx.fill();
 
-            document.getElementById('hud-subduction-angle').innerText = `傾角: ${data.dipAngle || 28}°`;
+            sCtx.fillStyle = "#fff"; sCtx.font = "bold 10px sans-serif"; sCtx.fillText(`★ ${data.depth} km`, fx - 20, Math.min(fy, h - 25) - 10);
+
+            document.getElementById('hud-subduction-angle').innerText = `Dip: ${data.dipAngle || 28}°`;
         }
 
         function populateList(containerId, dataArray, icon) {
@@ -578,7 +649,11 @@
             targetCameraPos = latLngToVector3(target.data.lat, target.data.lng, RADIUS * 1.8);
 
             document.querySelectorAll('.btn-step').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-step-${index}`).classList.add('active');
+            const activeBtn = document.getElementById(`btn-step-${index}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
 
             const bdg = document.getElementById('c-badge');
             bdg.className = `badge-type ${target.data.type === 'predict' ? 'predict' : 'real'}`;
@@ -588,9 +663,19 @@
             const dBdg = document.getElementById('c-depth-badge');
             dBdg.innerText = depthInfo.text; dBdg.style.backgroundColor = depthInfo.hex;
 
+            const tsunamiBadge = document.getElementById('c-tsunami-badge');
+            const numMag = parseFloat(target.data.mag.replace(/[^0-9.]/g, ''));
+            if (target.data.isOceanic && numMag >= 7.0 && target.data.depth < 70) {
+                tsunamiBadge.style.display = 'inline-block';
+                tsunamiBadge.innerText = lang.badgeTsunami;
+            } else {
+                tsunamiBadge.style.display = 'none';
+            }
+
             document.getElementById('c-title').innerText = target.data.location;
             document.getElementById('c-date').innerText = target.data.date;
             document.getElementById('c-mag').innerText = target.data.mag;
+            document.getElementById('c-depth').innerText = `${lang.depthLabel} ${target.data.depth} km`;
             document.getElementById('c-desc').innerText = target.data.desc;
             
             dialogCard.style.display = 'block';
@@ -604,7 +689,6 @@
             document.getElementById('btn-toggle-sidebar').innerText = '▶';
         }
 
-        // ================= 復原：綁定所有視圖切換按鈕 =================
         function setupUIEventListeners() {
             document.getElementById('timeline-slider').oninput = (e) => {
                 clearInterval(timelineTimer); isTimelinePlaying = false; document.getElementById('btn-timeline-play').innerText = '▶';
@@ -627,7 +711,6 @@
                 this.innerText = sidebar.classList.contains('collapsed') ? '◀' : '▶';
             };
 
-            // 復原控制按鈕事件
             document.getElementById('btn-toggle-nebula').onclick = function() {
                 showNebula = !showNebula; this.classList.toggle('active', showNebula);
                 if(nebulaPointsMesh) nebulaPointsMesh.visible = showNebula;
@@ -638,11 +721,7 @@
             };
             document.getElementById('btn-toggle-plates').onclick = function() {
                 showPlates = !showPlates; this.classList.toggle('active', showPlates);
-                if(plateVelocityGroup) plateVelocityGroup.visible = showPlates;
-            };
-            document.getElementById('btn-toggle-stress').onclick = function() {
-                showStress = !showStress; this.classList.toggle('active', showStress);
-                if(stressFieldGroup) stressFieldGroup.visible = showStress;
+                if(plateLinesGroup) plateLinesGroup.visible = showPlates;
             };
             document.getElementById('btn-share-link').onclick = () => {
                 navigator.clipboard.writeText(window.location.href).then(() => {
@@ -655,10 +734,10 @@
         function updateDialogPosition() {
             if (currentIndex < 0 || !markerObjects[currentIndex]) return;
             const screenPos = markerObjects[currentIndex].pos.clone().project(camera);
-            if (screenPos.z < 1) { 
+            if (screenPos.z < 0.98) { 
                 dialogCard.style.display = 'block';
                 dialogCard.style.left = `${(screenPos.x*.5+.5)*window.innerWidth - 160}px`; 
-                dialogCard.style.top = `${(-screenPos.y*.5+.5)*window.innerHeight - 170}px`; 
+                dialogCard.style.top = `${(-screenPos.y*.5+.5)*window.innerHeight - 180}px`; 
             } else dialogCard.style.display = 'none';
         }
 
@@ -686,7 +765,6 @@
                 });
             });
 
-            // 復原：讓應力星雲持續律動
             if (showNebula && nebulaPointsMesh && nebulaPositions) {
                 for (let i = 0; i < nebulaCount; i++) {
                     const i3 = i * 3;
